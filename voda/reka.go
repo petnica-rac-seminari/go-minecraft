@@ -1,3 +1,4 @@
+package voda
 
 type Cords struct {
 	x float64
@@ -29,4 +30,8 @@ func (d *Deo) Postavi(c Cords) {
 
 func (r *Reka) AddDeo(d *Deo) {
 	r.deo = append(r.deo, d)
+}
+
+func (d *Deo) CentarDela() {
+
 }
