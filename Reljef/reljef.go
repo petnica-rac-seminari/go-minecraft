@@ -3,7 +3,6 @@ package main
 import (
 	"main/blocks"
 	"main/world"
-	"math/rand"
 
 	"github.com/KEINOS/go-noise"
 )
@@ -12,14 +11,14 @@ func BlockAtLocation(x, y, z int, frequency, amplitude, baseHeight float64, seed
 	n, _ := noise.New(noise.OpenSimplex, seed)
 	amplitude /= 2
 	height := (n.Eval64(float64(x)*frequency, float64(z)*frequency)+1)*amplitude + baseHeight
-	if height < float64(y) {
-		return blocks.Air
+	if height+3 < float64(y) {
+		return blocks.Stone
+	} else if height+2 < float64(y) {
+		return blocks.Dirt
+	} else if height+1 < float64(y) {
+		return blocks.Grass
 	} else {
-		if rand.Float64() < 0.5 {
-			return blocks.Stone
-		} else {
-			return blocks.Grass
-		}
+		return blocks.Air
 	}
 }
 
