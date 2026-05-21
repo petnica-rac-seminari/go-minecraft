@@ -2,7 +2,7 @@ package navigation
 
 import (
 	"fmt"
-	"go-minecraft/internal/world"
+	"main/world"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -13,7 +13,7 @@ const (
 )
 
 // HandleBlockInput: lijevi = ukloni, desni = postavi.
-func HandleBlockInput(cam *rl.Camera3D, w *world.World) {
+func HandleBlockInput(cam *rl.Camera3D, w *world.WorldStruct) {
 	if rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
 		RemoveBlockAtCrosshair(cam, w)
 	}
@@ -22,7 +22,7 @@ func HandleBlockInput(cam *rl.Camera3D, w *world.World) {
 	}
 }
 
-func RemoveBlockAtCrosshair(cam *rl.Camera3D, w *world.World) {
+func RemoveBlockAtCrosshair(cam *rl.Camera3D, w *world.WorldStruct) {
 	hit := Raycast(w, cam.Position, CameraForward(cam))
 	if !hit.Found {
 		return
@@ -30,7 +30,7 @@ func RemoveBlockAtCrosshair(cam *rl.Camera3D, w *world.World) {
 	w.Remove(hit.BlockX, hit.BlockY, hit.BlockZ)
 }
 
-func PlaceBlockAtCrosshair(cam *rl.Camera3D, w *world.World, color rl.Color) {
+func PlaceBlockAtCrosshair(cam *rl.Camera3D, w *world.WorldStruct, color rl.Color) {
 	hit := Raycast(w, cam.Position, CameraForward(cam))
 	if !hit.Found {
 		return
@@ -47,12 +47,12 @@ func PlaceBlockAtCrosshair(cam *rl.Camera3D, w *world.World, color rl.Color) {
 	w.Set(hit.PlaceX, hit.PlaceY, hit.PlaceZ, color)
 }
 
-func tooCloseToCamera(cam *rl.Camera3D, w *world.World, x, y, z int) bool {
+func tooCloseToCamera(cam *rl.Camera3D, w *world.WorldStruct, x, y, z int) bool {
 	c := w.BlockCenter(x, y, z)
 	return rl.Vector3Distance(cam.Position, c) < 1.2
 }
 
-func DrawHUD(cam *rl.Camera3D, w *world.World) {
+func DrawHUD(cam *rl.Camera3D, w *world.WorldStruct) {
 	rl.DrawText(fmt.Sprintf("Blocks: %d", w.Count()), 10, 10, 20, rl.Black)
 	rl.DrawText(fmt.Sprintf("Facing: %s", CameraCardinal(cam)), 10, 40, 20, rl.Black)
 
