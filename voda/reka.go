@@ -1,27 +1,30 @@
 
+type Cords struct {
+	x float64
+	y float64
+}
 
 type Reka struct {
 	deo []Deo
 }
 
 type Deo struct {
-	brzinaFloat float64
-	boja        string
-	x1, y1      float64
-	x2, y2      float64
-	imavode     [][]bool
+	brzinaFloat     float64
+	boja            string
+	cords1          Cords
+	cords2          Cords
+	imavode         [][]bool
+	centralnaLinija []Cords
 }
 
-func (d *Deo) NewDeo(x1, y1, x2, y2 int) {
-	d.imavode = [x2 - x1][y2 - y1]bool
-	d.x1 = x1
-	d.x2 = x2
-	d.y1 = y1
-	d.y2 = y2
+func (d *Deo) NewDeo(c1 Cords, c2 Cords) {
+	d.imavode = [c2.x - c1.x][c2.y - c1.y]bool
+	d.cords1 = c1
+	d.cords2 = c2
 }
 
-func (d *Deo) Postavi(x int, y int) {
-	d.imavode[x-x1][y-y1] = voda
+func (d *Deo) Postavi(c Cords) {
+	d.imavode[c.x-d.cords1.x][c.y-d.cords1.y] = voda
 }
 
 func (r *Reka) AddDeo(d *Deo) {
