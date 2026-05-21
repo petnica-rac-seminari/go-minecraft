@@ -14,7 +14,8 @@ func main() {
 	rl.InitWindow(800, 600, "Raylib Go - 3D Kocka i Skakanje")
 	defer rl.CloseWindow()
 
-	camera := rl.Camera3D{}
+	// cela kamera full sjebana
+	camera := rl.Camera3D{} //
 	camera.Position = rl.NewVector3(4.0, 10.0, 4.0)
 	camera.Target = rl.NewVector3(0.0, 1.0, 0.0)
 	camera.Up = rl.NewVector3(0.0, 1.0, 0.0)
@@ -33,13 +34,13 @@ func main() {
 	generatedChunk := reljef.GenerateChunk(0, 0, 0.1, 8, 0, 1)
 
 	const maxReach = navigation.DefaultMaxReach
-	var lastHit navigation.RaycastHit
+	var lastHit navigation.RaycastHit //proveriti biblioteku
 
 	var jumpCtrl navigation.JumpInput
-	const eyeHeight = navigation.DefaultEyeHeight
+	const eyeHeight = navigation.DefaultEyeHeight //sta je ovo
 
 	for !rl.WindowShouldClose() {
-		rl.UpdateCamera(&camera, rl.CameraFirstPerson)
+		rl.UpdateCamera(&camera, rl.CameraFirstPerson) // kamera
 
 		navigation.ApplyHorizontalCollision(&camera, generatedChunk, eyeHeight, navigation.PlayerHalfWidth)
 
@@ -54,10 +55,10 @@ func main() {
 			navigation.PlaceAdjacent(&generatedChunk, hit, blocks.Grass)
 		}
 
-		// if rl.IsKeyPressed(rl.KeySpace) && isGrounded {
-		// 	verticalVelocity = jumpForce
-		// 	isGrounded = false
-		// }
+		if rl.IsKeyPressed(rl.KeySpace) && isGrounded {
+			verticalVelocity = jumpForce
+			isGrounded = false
+		}
 
 		if navigation.IsAirborne(generatedChunk, camera.Position, eyeHeight, navigation.PlayerHalfWidth) {
 			isGrounded = false
