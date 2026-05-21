@@ -1,9 +1,5 @@
 package blocks
 
-import (
-// rl "github.com/gen2brain/raylib-go/raylib"
-)
-
 type Block int
 
 const (
