@@ -1,4 +1,4 @@
-package main
+package reljef
 
 import (
 	"main/blocks"
