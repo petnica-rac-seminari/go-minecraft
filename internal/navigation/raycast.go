@@ -3,7 +3,7 @@ package navigation
 import (
 	"math"
 
-	"go-minecraft/internal/world"
+	"main/world"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -19,7 +19,7 @@ type Hit struct {
 	PlaceX, PlaceY, PlaceZ int
 }
 
-func Raycast(w *world.World, origin, direction rl.Vector3) Hit {
+func Raycast(w *world.WorldStruct, origin, direction rl.Vector3) Hit {
 	dir := rl.Vector3Normalize(direction)
 	var prevX, prevY, prevZ int
 	hasPrev := false
