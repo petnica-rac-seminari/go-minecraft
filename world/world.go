@@ -3,9 +3,9 @@ package world
 import "main/blocks"
 
 type Chunk struct {
-	globalX int
-	globalY int
-	Blocks  [16][64][16]blocks.Block
+	GlobalX int
+	GlobalZ int
+	Blocks  [][][]blocks.Block
 }
 
 type WorldStruct struct {
