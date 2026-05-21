@@ -14,6 +14,10 @@ type Deo struct {
 
 func (d *Deo) NewDeo(x1, y1, x2, y2 int) {
 	d.imavode = [x2 - x1][y2 - y1]bool
+	d.x1 = x1
+	d.x2 = x2
+	d.y1 = y1
+	d.y2 = y2
 }
 
 func (d *Deo) Postavi(x int, y int) {
