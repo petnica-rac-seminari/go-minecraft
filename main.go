@@ -2,6 +2,9 @@ package main
 
 import (
 	rl "github.com/gen2brain/raylib-go/raylib"
+	"main/Reljef"
+	//"main/blocks"
+	"main/world"
 )
 
 func main() {
@@ -23,6 +26,8 @@ func main() {
 	const jumpForce float32 = 0.15
 	const groundLevel float32 = 2.0
 	var isGrounded bool = true
+
+	generatedChunk := reljef.GenerateChunk(0, 0, 0.1, 8, 0, 1)
 
 	for !rl.WindowShouldClose() {
 		rl.UpdateCamera(&camera, rl.CameraFirstPerson)
@@ -51,9 +56,11 @@ func main() {
 
 		rl.BeginMode3D(camera)
 
-		rl.DrawCube(rl.NewVector3(0.0, 1.0, 0.0), 2.0, 2.0, 2.0, rl.Blue)
-		rl.DrawCubeWires(rl.NewVector3(0.0, 1.0, 0.0), 2.0, 2.0, 2.0, rl.DarkBlue)
-		rl.DrawGrid(10, 1.0)
+		// rl.DrawCube(rl.NewVector3(0.0, 1.0, 0.0), 2.0, 2.0, 2.0, rl.Blue)
+		// rl.DrawCubeWires(rl.NewVector3(0.0, 1.0, 0.0), 2.0, 2.0, 2.0, rl.DarkBlue)
+		world.RenderChunk(generatedChunk)
+
+		rl.DrawGrid(20, 1.0)
 
 		rl.EndMode3D()
 
