@@ -19,16 +19,21 @@ type Deo struct {
 }
 
 func (d *Deo) NewDeo(c1 Cords, c2 Cords) {
-	d.imavode = [c2.x - c1.x][c2.y - c1.y]bool
+	w := int(c2.x - c1.x)
+	h := int(c2.y - c1.y)
+	d.imavode = make([][]bool, w)
+	for i, _ := range d.imavode {
+		d.imavode[i] = make([]bool, h)
+	}
 	d.cords1 = c1
 	d.cords2 = c2
 }
 
-func (d *Deo) Postavi(c Cords) {
-	d.imavode[c.x-d.cords1.x][c.y-d.cords1.y] = voda
+func (d *Deo) Postavi(c Cords, v bool) {
+	d.imavode[int(c.x-d.cords1.x)][int(c.y-d.cords1.y)] = v
 }
 
-func (r *Reka) AddDeo(d *Deo) {
+func (r *Reka) AddDeo(d Deo) {
 	r.deo = append(r.deo, d)
 }
 
