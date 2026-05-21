@@ -1,3 +1,6 @@
 # Go Minecraft
 
-Desc
+Prvi komit kao primer
+Nova linija
+
+Jos jedna linija
