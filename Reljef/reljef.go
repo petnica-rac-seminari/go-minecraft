@@ -12,13 +12,13 @@ func BlockAtLocation(x, y, z int, frequency, amplitude, baseHeight float64, seed
 	amplitude /= 2
 	height := (n.Eval64(float64(x)*frequency, float64(z)*frequency)+1)*amplitude + baseHeight
 	if height+3 < float64(y) {
-		return blocks.Stone
-	} else if height+2 < float64(y) {
-		return blocks.Dirt
-	} else if height+1 < float64(y) {
-		return blocks.Grass
-	} else {
 		return blocks.Air
+	} else if height+2 < float64(y) {
+		return blocks.Grass
+	} else if height+1 < float64(y) {
+		return blocks.Dirt
+	} else {
+		return blocks.Stone
 	}
 }
 
