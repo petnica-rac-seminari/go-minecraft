@@ -1,3 +1,4 @@
+package voda
 
 type Cords struct {
 	x float64
