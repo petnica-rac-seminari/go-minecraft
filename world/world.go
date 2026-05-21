@@ -57,13 +57,12 @@ func RenderBlock(block blocks.Block, x, y, z int) {
 	rl.DrawCube(rl.NewVector3(float32(x), float32(y), float32(z)), 1.0, 1.0, 1.0, color)
 }
 
-func RenderChunk(c Chunk) {
+func RenderChunk(c Chunk, chunkX, chunkZ int) {
 	for i, xBlock := range c.Blocks {
 		for j, yBlock := range xBlock {
 			for k, zBlock := range yBlock {
-				RenderBlock(zBlock, i, j, k)
+				RenderBlock(zBlock, i+chunkX*16, j, k+chunkZ*16)
 			}
 		}
-
 	}
 }

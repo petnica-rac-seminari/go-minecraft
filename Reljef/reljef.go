@@ -3,6 +3,7 @@ package reljef
 import (
 	"main/blocks"
 	"main/world"
+	"math/rand"
 
 	"github.com/KEINOS/go-noise"
 )
@@ -10,11 +11,18 @@ import (
 func BlockAtLocation(x, y, z int, frequency, amplitude, baseHeight float64, seed int64) blocks.Block {
 	n, _ := noise.New(noise.OpenSimplex, seed)
 	amplitude /= 2
+
 	height := (n.Eval64(float64(x)*frequency, float64(z)*frequency)+1)*amplitude + baseHeight
+	height += (n.Eval64(float64(x)*frequency, float64(z)*2*frequency)+1)*amplitude + baseHeight
+	height /= 2
 	if height+3 < float64(y) {
 		return blocks.Air
 	} else if height+2 < float64(y) {
-		return blocks.Grass
+		if rand.Float32() < 0.25 {
+			return blocks.Dirt
+		} else {
+			return blocks.Grass
+		}
 	} else if height+1 < float64(y) {
 		return blocks.Dirt
 	} else {
