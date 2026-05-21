@@ -54,7 +54,7 @@ func RenderBlock(block blocks.Block, x, y, z int) {
 		color = rl.White
 	}
 
-	rl.DrawCube(rl.NewVector3(float32(x), float32(y), float32(z)), 2.0, 2.0, 2.0, color)
+	rl.DrawCube(rl.NewVector3(float32(x), float32(y), float32(z)), 1.0, 1.0, 1.0, color)
 }
 
 func RenderChunk(c Chunk) {
