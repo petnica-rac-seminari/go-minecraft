@@ -49,10 +49,35 @@ func main() {
 
 	rl.SetTargetFPS(60)
 
+	var verticalVelocity float32 = 0.0
+	const gravity float32 = -0.6
+	const jumpForce float32 = 0.15
+	const groundLevel float32 = 2.0
+	var isGrounded bool = true
+
 	// 3. Glavna petlja
 	for !rl.WindowShouldClose() {
 		// Automatski ažurira kameru na osnovu WASD tastera i pokreta miša
 		rl.UpdateCamera(&camera, rl.CameraFirstPerson)
+
+		if rl.IsKeyPressed(rl.KeySpace) && isGrounded {
+			verticalVelocity = jumpForce
+			isGrounded = false
+		}
+
+		if !isGrounded {
+			verticalVelocity += gravity * rl.GetFrameTime()
+			camera.Position.Y += verticalVelocity
+			camera.Target.Y += verticalVelocity
+
+			if camera.Position.Y <= groundLevel {
+				diff := groundLevel - camera.Position.Y
+				camera.Position.Y = groundLevel
+				camera.Target.Y += diff
+				verticalVelocity = 0.0
+				isGrounded = true
+			}
+		}
 
 		// --- POČETAK CRTANJA ---
 		rl.BeginDrawing()
