@@ -1,8 +1,35 @@
 package main
 
 import (
+	"main/blocks"
+
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
+
+func RenderBlock(block blocks.Block, x, y, z int) {
+	switch block {
+	case blocks.Air:
+		return
+	case blocks.Grass:
+		rl.DrawCube(rl.NewVector3(float32(x), float32(y), float32(z)), 2.0, 2.0, 2.0, rl.DarkGreen)
+		rl.DrawCubeWires(rl.NewVector3(float32(x), float32(y), float32(z)), 2.0, 2.0, 2.0, rl.Green)
+	case blocks.Stone:
+		rl.DrawCube(rl.NewVector3(float32(x), float32(y), float32(z)), 2.0, 2.0, 2.0, rl.Gray)
+		rl.DrawCubeWires(rl.NewVector3(float32(x), float32(y), float32(z)), 2.0, 2.0, 2.0, rl.DarkGray)
+	case blocks.Dirt:
+		rl.DrawCube(rl.NewVector3(float32(x), float32(y), float32(z)), 2.0, 2.0, 2.0, rl.Brown)
+		rl.DrawCubeWires(rl.NewVector3(float32(x), float32(y), float32(z)), 2.0, 2.0, 2.0, rl.DarkBrown)
+	case blocks.Water:
+		rl.DrawCube(rl.NewVector3(float32(x), float32(y), float32(z)), 2.0, 2.0, 2.0, rl.Blue)
+		rl.DrawCubeWires(rl.NewVector3(float32(x), float32(y), float32(z)), 2.0, 2.0, 2.0, rl.DarkBlue)
+	case blocks.Bedrock:
+		rl.DrawCube(rl.NewVector3(float32(x), float32(y), float32(z)), 2.0, 2.0, 2.0, rl.Black)
+		rl.DrawCubeWires(rl.NewVector3(float32(x), float32(y), float32(z)), 2.0, 2.0, 2.0, rl.Gray)
+	case blocks.Snow:
+		rl.DrawCube(rl.NewVector3(float32(x), float32(y), float32(z)), 2.0, 2.0, 2.0, rl.White)
+		rl.DrawCubeWires(rl.NewVector3(float32(x), float32(y), float32(z)), 2.0, 2.0, 2.0, rl.Gray)
+	}
+}
 
 func main() {
 	// 1. Inicijalizacija prozora
@@ -22,10 +49,35 @@ func main() {
 
 	rl.SetTargetFPS(60)
 
+	var verticalVelocity float32 = 0.0
+	const gravity float32 = -0.6
+	const jumpForce float32 = 0.15
+	const groundLevel float32 = 2.0
+	var isGrounded bool = true
+
 	// 3. Glavna petlja
 	for !rl.WindowShouldClose() {
 		// Automatski ažurira kameru na osnovu WASD tastera i pokreta miša
 		rl.UpdateCamera(&camera, rl.CameraFirstPerson)
+
+		if rl.IsKeyPressed(rl.KeySpace) && isGrounded {
+			verticalVelocity = jumpForce
+			isGrounded = false
+		}
+
+		if !isGrounded {
+			verticalVelocity += gravity * rl.GetFrameTime()
+			camera.Position.Y += verticalVelocity
+			camera.Target.Y += verticalVelocity
+
+			if camera.Position.Y <= groundLevel {
+				diff := groundLevel - camera.Position.Y
+				camera.Position.Y = groundLevel
+				camera.Target.Y += diff
+				verticalVelocity = 0.0
+				isGrounded = true
+			}
+		}
 
 		// --- POČETAK CRTANJA ---
 		rl.BeginDrawing()
