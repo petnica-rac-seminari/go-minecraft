@@ -23,3 +23,7 @@ func (d *Deo) NewDeo(x1, y1, x2, y2 int) {
 func (d *Deo) Postavi(x int, y int) {
 	d.imavode[x-x1][y-y1] = voda
 }
+
+func (r *Reka) AddDeo(d *Deo) {
+	r.deo = append(r.deo, d)
+}
