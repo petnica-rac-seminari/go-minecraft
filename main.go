@@ -72,7 +72,7 @@ func main() {
 		oblaci.MoveClouds(clouds)
 
 		rl.BeginDrawing()
-		rl.ClearBackground(nebo.SkyColor(currentTick))
+		rl.ClearBackground(nebo.SkyColor(int64(currentTick)))
 
 		rl.BeginMode3D(camera)
 
