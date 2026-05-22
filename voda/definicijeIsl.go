@@ -24,3 +24,13 @@ type Deo struct {
 	start Cord
 	end   Cord
 }
+
+func (m *MalaReka) Add(d *Deo) {
+	m.deo = append(m.deo, *d)
+}
+func (v *VelikaReka) Add(d *Deo) {
+	v.deo = append(v.deo, *d)
+}
+func (p *Potok) Add(d *Deo) {
+	p.deo = append(p.deo, *d)
+}
