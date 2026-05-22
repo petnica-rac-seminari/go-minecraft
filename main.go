@@ -6,6 +6,7 @@ import (
 	reljef "main/Reljef"
 
 	nebo "main/dayNightCycle"
+	"main/oblaci"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 
@@ -39,6 +40,7 @@ func main() {
 	const maxReach = navigation.DefaultMaxReach
 	var lastHit navigation.RaycastHit
 	var time float32 = 0
+	var clouds []oblaci.CLOUDS = oblaci.GenerateClouds()
 
 	var jumpCtrl navigation.JumpInput
 	const eyeHeight = navigation.DefaultEyeHeight
@@ -125,6 +127,8 @@ func main() {
 				}
 			}
 		}
+
+		oblaci.RenderCloud(clouds, camera.Position.X, camera.Position.Y, camera.Position.Z)
 
 		if lastHit.Hit {
 			navigation.DrawBlockOutline(lastHit.X, lastHit.Y, lastHit.Z, rl.Yellow)
