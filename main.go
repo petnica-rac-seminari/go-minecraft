@@ -41,6 +41,7 @@ func main() {
 	var clouds []oblaci.CLOUDS = oblaci.GenerateClouds()
 
 	sunce_model := nebo.RenderSun()
+	moonModel := nebo.RenderMoon()
 
 	generatedChunk := reljef.GenerateChunk(0, 0, 0.1, 8, 0, 1)
 
@@ -71,7 +72,7 @@ func main() {
 		oblaci.MoveClouds(clouds)
 
 		rl.BeginDrawing()
-		rl.ClearBackground(nebo.SkyColor(int(currentTick)))
+		rl.ClearBackground(nebo.SkyColor(currentTick))
 
 		rl.BeginMode3D(camera)
 
@@ -81,6 +82,7 @@ func main() {
 		oblaci.DrawClouds(clouds)
 
 		rl.DrawModel(*sunce_model, nebo.MoveSun(float64(nebo.SkyBodyAngle(currentTick)), camera), 1.0, rl.White)
+		rl.DrawModel(*moonModel, nebo.MoveMoon(float64(nebo.SkyBodyAngle(currentTick)), camera), 1.0, rl.White)
 
 		rl.DrawGrid(20, 1.0)
 
