@@ -46,6 +46,7 @@ func main() {
 	var currentTick float32 = 0
 	var clouds []oblaci.CLOUDS = oblaci.GenerateClouds()
 	sunce_model := nebo.RenderSun()
+	var dim bool = true
 
 	var jumpCtrl navigation.JumpInput
 	const eyeHeight = navigation.DefaultEyeHeight
@@ -63,8 +64,34 @@ func main() {
 				pos := world.ChunkPos{X: playerCX + x, Z: playerCZ + z}
 
 				if _, exists := world.LoadedChunks[pos]; !exists {
-					c := reljef.GenerateChunk(pos.X*16, pos.Z*16, seed)
-					world.LoadedChunks[pos] = &c
+					if dim {
+						c := reljef.GenerateOW(pos.X*16, pos.Z*16, seed)
+						world.LoadedChunks[pos] = &c
+					} else {
+						c := reljef.GenerateNether(pos.X*16, pos.Z*16, seed)
+						world.LoadedChunks[pos] = &c
+					}
+				}
+			}
+		}
+
+		if rl.GetKeyPressed() == rl.KeyG {
+			camera.Position.Y += 5
+			world.LoadedChunks = make(map[world.ChunkPos]*world.Chunk)
+			dim = !dim
+			for z := -halfDist; z <= halfDist; z++ {
+				for x := -halfDist; x <= halfDist; x++ {
+					pos := world.ChunkPos{X: playerCX + x, Z: playerCZ + z}
+
+					if _, exists := world.LoadedChunks[pos]; !exists {
+						if dim {
+							c := reljef.GenerateOW(pos.X*16, pos.Z*16, seed)
+							world.LoadedChunks[pos] = &c
+						} else {
+							c := reljef.GenerateNether(pos.X*16, pos.Z*16, seed)
+							world.LoadedChunks[pos] = &c
+						}
+					}
 				}
 			}
 		}

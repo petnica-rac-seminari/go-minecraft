@@ -41,7 +41,7 @@ func Octaves(n noise.Generator, v float64, x int, y int, br_o int) float64 {
 	return value / maxAmp
 }
 
-func assignValues(n noise.Generator, br_oct, startX, startZ, sm_mod int) []float64 {
+func assignValues(n noise.Generator, br_oct, startX, startZ int, sm_mod float64) []float64 {
 
 	values := make([]float64, 16*16)
 
@@ -61,7 +61,7 @@ func assignValues(n noise.Generator, br_oct, startX, startZ, sm_mod int) []float
 	return values
 }
 
-func newNoise(seedMod, br_oct, startX, startZ, sm_mod int) []float64 {
+func newNoise(seedMod, br_oct, startX, startZ int, sm_mod float64) []float64 {
 	n, _ := noise.New(noise.OpenSimplex, int64(seed+seedMod))
 	return assignValues(n, br_oct, startX, startZ, sm_mod)
 }
@@ -156,7 +156,7 @@ func GenerateTree(x, y, z int, chunk [][][]blocks.Block) {
 	chunk[x][y+5][z] = blocks.Log
 }
 
-func GenerateChunk(startX, startZ, seed int) world.Chunk {
+func GenerateOW(startX, startZ, seed int) world.Chunk {
 	chunk := make([][][]blocks.Block, 16)
 	det_trees := DetermineTrees(startX, startZ)
 	biome_map := BiomeMap(startX, startZ)
@@ -252,6 +252,43 @@ func GenerateChunk(startX, startZ, seed int) world.Chunk {
 					} else {
 						chunk[x][y][z] = blocks.Water
 					}
+				}
+			}
+		}
+	}
+
+	return world.Chunk{startX / 16, startZ / 16, chunk, false}
+}
+
+func GenerateNether(startX, startZ, seed int) world.Chunk {
+	chunk := make([][][]blocks.Block, 16)
+	for x := 0; x < 16; x++ {
+		chunk[x] = make([][]blocks.Block, 64)
+		for z := 0; z < 64; z++ {
+			chunk[x][z] = make([]blocks.Block, 16)
+		}
+	}
+
+	values := newNoise(0, 1, startX, startZ, 0.25)
+	values1 := newNoise(1, 7, startX, startZ, 0.25)
+	BiomeMap(startX, startZ)
+
+	for x := 0; x < 16; x++ {
+		for z := 0; z < 16; z++ {
+			v := values[z*16+x]
+			norm := (v + 1.0) / 2.0
+
+			v = values1[z*16+x]
+			norm1 := (v + 1.0) / 2.0
+
+			combined := (norm + norm1) / 2.0
+			normf := int(combined*combined*24) + 4
+
+			for y := 0; y <= normf; y++ {
+				if y == 0 {
+					chunk[x][y][z] = blocks.Bedrock
+				} else {
+					chunk[x][y][z] = blocks.Netherrack
 				}
 			}
 		}
