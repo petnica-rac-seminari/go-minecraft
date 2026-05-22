@@ -4,6 +4,8 @@ import (
 	reljef "main/Reljef"
 	nebo "main/daynightcycle"
 	"main/oblaci"
+	"math/rand"
+	"time"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 
@@ -13,7 +15,9 @@ import (
 
 func main() {
 
-	rl.InitWindow(800, 600, "Raylib Go - 3D Kocka i Skakanje")
+	rand.Seed(time.Now().UnixNano())
+
+	rl.InitWindow(1920, 1080, "Raylib Go - 3D Kocka i Skakanje")
 	defer rl.CloseWindow()
 
 	// startTime := time.Now()
@@ -33,8 +37,10 @@ func main() {
 	const jumpForce float32 = 0.15
 	const groundLevel float32 = 10.0
 	var isGrounded bool = true
-	var time float32 = 0
+	var currentTick float32 = 0
 	var clouds []oblaci.CLOUDS = oblaci.GenerateClouds()
+
+	sunce_model := nebo.RenderSun()
 
 	generatedChunk := reljef.GenerateChunk(0, 0, 0.1, 8, 0, 1)
 
@@ -42,7 +48,7 @@ func main() {
 
 	for !rl.WindowShouldClose() {
 		rl.UpdateCamera(&camera, rl.CameraFirstPerson)
-		time += rl.GetFrameTime()
+		currentTick += rl.GetFrameTime()
 		if rl.IsKeyPressed(rl.KeySpace) && isGrounded {
 			verticalVelocity = jumpForce
 			isGrounded = false
@@ -62,15 +68,19 @@ func main() {
 			}
 		}
 
+		oblaci.MoveClouds(clouds)
+
 		rl.BeginDrawing()
-		rl.ClearBackground(nebo.SkyColor(int(time)))
+		rl.ClearBackground(nebo.SkyColor(int(currentTick)))
 
 		rl.BeginMode3D(camera)
 
 		// rl.DrawCube(rl.NewVector3(0.0, 1.0, 0.0), 2.0, 2.0, 2.0, rl.Blue)
 		// rl.DrawCubeWires(rl.NewVector3(0.0, 1.0, 0.0), 2.0, 2.0, 2.0, rl.DarkBlue)
 		world.RenderChunk(generatedChunk)
-		oblaci.RenderCloud(clouds)
+		oblaci.DrawClouds(clouds)
+
+		rl.DrawModel(*sunce_model, nebo.MoveSun(float64(nebo.SkyBodyAngle(currentTick)), camera), 1.0, rl.White)
 
 		rl.DrawGrid(20, 1.0)
 
@@ -79,7 +89,6 @@ func main() {
 
 		rl.DrawFPS(10, 10)
 		rl.DrawText("WASD - Kretanje | Mis - Okretanje | Space - Skakanje", 10, 40, 20, rl.DarkGray)
-
 		rl.EndDrawing()
 	}
 }
