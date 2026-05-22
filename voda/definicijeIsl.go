@@ -34,6 +34,14 @@ type Deo struct {
 	pointer DeoPointer
 }
 
+func NewDeo(x1 int, y1 int, z1 int, x2 int, y2 int, z2 int) Deo {
+	d := Deo{
+		start: Cord{x: x1, y: y1, z: z1},
+		end:   Cord{x: x1, y: y1, z: z1},
+	}
+	return d
+}
+
 func (m *MalaReka) Add(d *Deo) {
 	m.deo = append(m.deo, *d)
 }
