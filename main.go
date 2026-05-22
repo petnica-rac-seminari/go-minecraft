@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	reljef "main/Reljef"
+	nebo "main/daynightcycle"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 
@@ -12,6 +14,8 @@ import (
 func main() {
 	rl.InitWindow(800, 600, "Raylib Go - 3D Kocka i Skakanje")
 	defer rl.CloseWindow()
+
+	// startTime := time.Now()
 
 	camera := rl.Camera3D{}
 	camera.Position = rl.NewVector3(4.0, 10.0, 4.0)
@@ -28,12 +32,12 @@ func main() {
 	const jumpForce float32 = 0.15
 	const groundLevel float32 = 10.0
 	var isGrounded bool = true
-
+	var time float32 = 0
 	generatedChunk := reljef.GenerateChunk(0, 0, 0.1, 8, 0, 1)
 
 	for !rl.WindowShouldClose() {
 		rl.UpdateCamera(&camera, rl.CameraFirstPerson)
-
+		time += rl.GetFrameTime()
 		if rl.IsKeyPressed(rl.KeySpace) && isGrounded {
 			verticalVelocity = jumpForce
 			isGrounded = false
@@ -53,8 +57,11 @@ func main() {
 			}
 		}
 
+		c := nebo.SkyColor(int(time))
+
 		rl.BeginDrawing()
-		rl.ClearBackground(rl.RayWhite)
+		rl.ClearBackground(c)
+		fmt.Println(c)
 
 		rl.BeginMode3D(camera)
 
