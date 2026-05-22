@@ -39,6 +39,8 @@ func main() {
 
 	for !rl.WindowShouldClose() {
 		time += rl.GetFrameTime()
+
+		nav.HandleBlockManipulation(&camera)
 		nav.HandleMovement(&camera)
 
 		playerCX := int(math.Floor(float64(camera.Position.X) / 16.0))
