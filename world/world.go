@@ -59,11 +59,41 @@ func RenderBlock(block blocks.Block, x, y, z int) {
 }
 
 func RenderChunk(c Chunk, x_offset int, y_offset int) {
-	for i, xBlock := range c.Blocks {
-		for j, yBlock := range xBlock {
-			for k, zBlock := range yBlock {
-				if zBlock != 0 {
-					RenderBlock(zBlock, i+x_offset*16, j, k+y_offset*16)
+	xLen := len(c.Blocks)
+	if xLen == 0 {
+		return
+	}
+	yLen := len(c.Blocks[0])
+	if yLen == 0 {
+		return
+	}
+	zLen := len(c.Blocks[0][0])
+	if zLen == 0 {
+		return
+	}
+
+	for x, xBlock := range c.Blocks {
+		for y, yBlock := range xBlock {
+			for z, zBlock := range yBlock {
+				// 2. Proveravamo da li je blok vidljiv (da li dodiruje Air)
+				isVisible := false
+
+				// Provera X ose (levo i desno)
+				if x == 0 || x == xLen-1 || c.Blocks[x-1][y][z] == blocks.Air || c.Blocks[x+1][y][z] == blocks.Air {
+					isVisible = true
+				} else
+				// Provera Y ose (dole i gore)
+				if y == 0 || y == yLen-1 || c.Blocks[x][y-1][z] == blocks.Air || c.Blocks[x][y+1][z] == blocks.Air {
+					isVisible = true
+				} else
+				// Provera Z ose (napred i nazad)
+				if z == 0 || z == zLen-1 || c.Blocks[x][y][z-1] == blocks.Air || c.Blocks[x][y][z+1] == blocks.Air {
+					isVisible = true
+				}
+
+				// 3. Ako je bar jedna strana izložena vazduhu (ili je na ivici chunka), renderujemo ga
+				if isVisible {
+					RenderBlock(zBlock, x+x_offset*16, y, z+y_offset*16)
 				}
 			}
 		}
