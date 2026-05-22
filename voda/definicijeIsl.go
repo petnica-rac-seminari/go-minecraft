@@ -21,5 +21,6 @@ type Potok struct {
 }
 
 type Deo struct {
-	start [][][]Cord
+	start Cord
+	end   Cord
 }
