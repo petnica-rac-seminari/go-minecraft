@@ -177,7 +177,7 @@ func main() {
 				pos := world.ChunkPos{X: playerCX + x, Z: playerCZ + z}
 
 				if _, exists := world.LoadedChunks[pos]; !exists {
-					c := reljef.GenerateChunk(pos.X*16, pos.Z*16)
+					c := reljef.GenerateChunk(pos.X*16, pos.Z*16, 0.1, 4, 4, 12345)
 					world.LoadedChunks[pos] = &c
 				}
 			}
@@ -257,7 +257,7 @@ func main() {
 		rl.DrawText("WASD - Kretanje | Mis - Okretanje | Space - Skakanje", 10, 40, 20, rl.DarkGray)
 		rl.DrawText("LMB - Ukloni | RMB - Postavi Grass", 10, 70, 20, rl.DarkGray)
 		rl.DrawText("Space x2 - Skok | Kretanje po blokovima", 10, 100, 20, rl.DarkGray)
-		rl.DrawText("1-grass | 2-stone | 3-dirt | 4-water | 5-snow", 10, 550, 20, rl.White)
+		rl.DrawText("1-grass | 2-stone | 3-dirt | 4-water | 5-snow", 10, 1000, 20, rl.White)
 
 		rl.EndDrawing()
 	}

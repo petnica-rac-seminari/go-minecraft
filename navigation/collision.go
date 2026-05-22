@@ -17,7 +17,7 @@ func isSolid(b blocks.Block) bool {
 	} else if b == blocks.Water {
 		return false
 	}
-	return b != (blocks.Air)
+	return true
 }
 func columnGroundY(worldX, worldZ float32, feetY float32) (groundY float32, ok bool) {
 	wx := intFloor(worldX)
@@ -33,7 +33,7 @@ func columnGroundY(worldX, worldZ float32, feetY float32) (groundY float32, ok b
 	}
 
 	for wy := startWY; wy >= 0; wy-- {
-		if world.GetGlobalBlock(wx, wy, wz) != blocks.Air {
+		if world.GetGlobalBlock(wx, wy, wz) != blocks.Air && world.GetGlobalBlock(wx, wy, wz) != blocks.Water {
 			return blockTopY(wy), true
 		}
 	}
@@ -124,9 +124,10 @@ func ApplyHorizontalCollision(camera *rl.Camera3D, eyeHeight, halfWidth float32)
 	for wx := minWX; wx <= maxWX; wx++ {
 		for wz := minWZ; wz <= maxWZ; wz++ {
 			for ly := minLY; ly <= maxLY; ly++ {
-				if world.GetGlobalBlock(wx, ly, wz) == blocks.Air {
+				if world.GetGlobalBlock(wx, ly, wz) == blocks.Air || world.GetGlobalBlock(wx, ly, wz) == blocks.Water {
 					continue
 				}
+
 				if !aabbOverlapsBlock(camera.Position, halfWidth, feetY+0.1, headY, wx, ly, wz) {
 					continue
 				}
@@ -157,7 +158,7 @@ func ApplyVerticalBlockPhysics(camera *rl.Camera3D, velocity *float32, grounded 
 	headWX := intFloor(camera.Position.X)
 	headWZ := intFloor(camera.Position.Z)
 	headWY := intFloor(camera.Position.Y)
-	if *velocity > 0 && world.GetGlobalBlock(headWX, headWY, headWZ) != blocks.Air {
+	if *velocity > 0 && world.GetGlobalBlock(headWX, headWY, headWZ) != blocks.Air && world.GetGlobalBlock(headWX, headWY, headWZ) != blocks.Water {
 		*velocity = 0
 	}
 
