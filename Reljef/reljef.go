@@ -20,14 +20,15 @@ const height = chunkSize * viewChunks
 const smoothness = 15
 
 func Octaves(n noise.Generator, v float64, x int, y int, br_o int) float64 {
+	sm := 15
 	value := v
 	amplitude := 1.0
 	frequency := 1.0
 	maxAmp := 1.0
 
 	for i := 0; i < br_o; i++ {
-		nx := (float64(x) / smoothness) * frequency
-		ny := (float64(y) / smoothness) * frequency
+		nx := (float64(x) / float64(sm)) * frequency
+		ny := (float64(y) / float64(sm)) * frequency
 
 		value += n.Eval64(nx, ny) * amplitude
 
@@ -40,7 +41,7 @@ func Octaves(n noise.Generator, v float64, x int, y int, br_o int) float64 {
 	return value / maxAmp
 }
 
-func assignValues(n noise.Generator, br_oct int, startX, startZ int) []float64 {
+func assignValues(n noise.Generator, br_oct, startX, startZ, sm_mod int) []float64 {
 
 	values := make([]float64, 16*16)
 
@@ -50,7 +51,7 @@ func assignValues(n noise.Generator, br_oct int, startX, startZ int) []float64 {
 			worldX := startX + x
 			worldZ := startZ + z
 
-			v := n.Eval64(float64(worldX)/smoothness, float64(worldZ)/smoothness)
+			v := n.Eval64(float64(worldX)/float64(sm_mod*smoothness), float64(worldZ)/float64(sm_mod*smoothness))
 			v = Octaves(n, v, worldX, worldZ, br_oct)
 
 			values[z*16+x] = v
@@ -60,19 +61,18 @@ func assignValues(n noise.Generator, br_oct int, startX, startZ int) []float64 {
 	return values
 }
 
-func newNoise(seedMod int, br_oct int, startX, startZ int) []float64 {
+func newNoise(seedMod, br_oct, startX, startZ, sm_mod int) []float64 {
 	n, _ := noise.New(noise.OpenSimplex, int64(seed+seedMod))
-	return assignValues(n, br_oct, startX, startZ)
+	return assignValues(n, br_oct, startX, startZ, sm_mod)
 }
 
-func DetermineStructure(startX, startZ int) [][]float64 {
+func DetermineTrees(startX, startZ int) [][]float64 {
 	coords := make([][]float64, 16)
 	for x := 0; x < 16; x++ {
 		coords[x] = make([]float64, 16)
 	}
 
-	values := newNoise(1, 2, startX, startZ)
-	// values1 := newNoise(2, 7, startX, startZ)
+	values := newNoise(2, 2, startX, startZ, 1)
 
 	for x := 0; x < 16; x++ {
 		for z := 0; z < 16; z++ {
@@ -95,30 +95,71 @@ func DetermineStructure(startX, startZ int) [][]float64 {
 	return coords
 }
 
+func BiomeMap(startX, startZ int) [][]int {
+	biomes := make([][]int, 16)
+
+	for x := 0; x < 16; x++ {
+		biomes[x] = make([]int, 16)
+	}
+
+	values := newNoise(2, 0, startX, startZ, 10)
+
+	for x := 0; x < 16; x++ {
+		for z := 0; z < 16; z++ {
+
+			v := values[z*16+x]
+			norm := v + 1.0
+
+			normf := int(norm*norm*24) + 4
+
+			if normf < 20 {
+				biomes[x][z] = 1
+			} else {
+				biomes[x][z] = 2
+			}
+		}
+	}
+
+	return biomes
+}
+
 func GenerateTree(x, y, z int, chunk [][][]blocks.Block) {
-	chunk[x][y][z] = blocks.Log
-	chunk[x][y+1][z] = blocks.Log
-	chunk[x][y+2][z] = blocks.Log
-	chunk[x][y+3][z] = blocks.Log
 	for dx := -2; dx <= 2; dx++ {
 		for dy := 3; dy <= 5; dy++ {
 			for dz := -2; dz <= 2; dz++ {
 				nx, nz := x+dx, z+dz
-				if nx < 0 || nx >= 16 || nz < 0 || nz >= 16 {
-					continue
-				}
-				if dx == 0 && dz == 0 && dy < 5 {
+				if (dx == -2 || dx == 2) && (dz == -2 || dz == 2) {
 					continue
 				}
 				chunk[nx][y+dy][nz] = blocks.Leaves
 			}
 		}
 	}
+
+	for dx := -1; dx <= 1; dx++ {
+		for dy := 6; dy <= 7; dy++ {
+			for dz := -1; dz <= 1; dz++ {
+				nx, nz := x+dx, z+dz
+				if (dx == -1 || dx == 1) && (dz == -1 || dz == 1) {
+					continue
+				}
+				chunk[nx][y+dy][nz] = blocks.Leaves
+			}
+		}
+	}
+
+	chunk[x][y][z] = blocks.Log
+	chunk[x][y+1][z] = blocks.Log
+	chunk[x][y+2][z] = blocks.Log
+	chunk[x][y+3][z] = blocks.Log
+	chunk[x][y+4][z] = blocks.Log
+	chunk[x][y+5][z] = blocks.Log
 }
 
 func GenerateChunk(startX, startZ, seed int) world.Chunk {
 	chunk := make([][][]blocks.Block, 16)
-	det_structs := DetermineStructure(startX, startZ)
+	det_trees := DetermineTrees(startX, startZ)
+	biome_map := BiomeMap(startX, startZ)
 	gen_structs := make([][]bool, 16)
 	for i := range gen_structs {
 		gen_structs[i] = make([]bool, 16)
@@ -131,12 +172,12 @@ func GenerateChunk(startX, startZ, seed int) world.Chunk {
 		}
 	}
 
-	values := newNoise(0, 1, startX, startZ)
-	values1 := newNoise(1, 7, startX, startZ)
+	values := newNoise(0, 1, startX, startZ, 1)
+	values1 := newNoise(1, 7, startX, startZ, 1)
+	BiomeMap(startX, startZ)
 
 	for x := 0; x < 16; x++ {
 		for z := 0; z < 16; z++ {
-
 			v := values[z*16+x]
 			norm := (v + 1.0) / 2.0
 
@@ -146,10 +187,14 @@ func GenerateChunk(startX, startZ, seed int) world.Chunk {
 			combined := (norm + norm1) / 2.0
 			normf := int(combined*combined*24) + 4
 
-			if normf > 7 && det_structs[x][z] == 1 {
+			if normf > 7 {
 				for y := 0; y <= int(normf); y++ {
 					if y == int(normf) {
-						chunk[x][y][z] = blocks.Grass
+						if biome_map[x][z] == 1 {
+							chunk[x][y][z] = blocks.Grass
+						} else if biome_map[x][z] == 2 {
+							chunk[x][y][z] = blocks.Sand
+						}
 					} else if y == int(normf)-1 {
 						chunk[x][y][z] = blocks.Dirt
 					} else if y == 0 {
@@ -159,56 +204,45 @@ func GenerateChunk(startX, startZ, seed int) world.Chunk {
 					}
 				}
 
-				valid_tr := true
+				if det_trees[x][z] == 1 {
+					valid_tr := true
 
-				for dx := -2; dx <= 2; dx++ {
-					for dz := -2; dz <= 2; dz++ {
+					for dx := -3; dx <= 3; dx++ {
+						for dz := -3; dz <= 3; dz++ {
 
-						nx := x + dx
-						nz := z + dz
+							nx := x + dx
+							nz := z + dz
 
-						if nx < 0 || nx >= 16 || nz < 0 || nz >= 16 {
-							continue
+							if nx < 0 || nx >= 16 || nz < 0 || nz >= 16 {
+								continue
+							}
+
+							if gen_structs[nx][nz] {
+								valid_tr = false
+								break
+							}
 						}
 
-						if gen_structs[nx][nz] {
-							valid_tr = false
+						if !valid_tr {
 							break
 						}
 					}
 
-					if !valid_tr {
-						break
+					if valid_tr && biome_map[x][z] == 1 {
+						gen_structs[x][z] = true
+						if rng.Intn(2) > 0 && !(x < 2 || x > 13 || z < 2 || z > 13) {
+							GenerateTree(x, normf+1, z, chunk)
+						}
 					}
-				}
-
-				if valid_tr {
-					gen_structs[x][z] = true
-					if rng.Intn(2) > 0 && !(x < 2 || x > 13 || z < 2 || z > 13) {
+				} else if biome_map[x][z] == 1 {
+					if rng.Intn(128) > 126 && !(x < 2 || x > 13 || z < 2 || z > 13) {
 						GenerateTree(x, normf+1, z, chunk)
 					}
 				}
-
-			} else if normf > 7 {
-				for y := 0; y <= int(normf); y++ {
-					if y == int(normf) {
-						chunk[x][y][z] = blocks.Grass
-					} else if y == int(normf)-1 {
-						chunk[x][y][z] = blocks.Dirt
-					} else if y == 0 {
-						chunk[x][y][z] = blocks.Bedrock
-					} else {
-						chunk[x][y][z] = blocks.Stone
-					}
-				}
-
-				if rng.Intn(128) > 126 && !(x < 2 || x > 13 || z < 2 || z > 13) {
-					GenerateTree(x, normf+1, z, chunk)
-				}
 			} else {
-				for y := 0; y <= 7; y++ {
+				for y := 0; y <= 8; y++ {
 					if y == int(normf) {
-						chunk[x][y][z] = blocks.Grass
+						chunk[x][y][z] = blocks.Sand
 					} else if y == int(normf)-1 {
 						chunk[x][y][z] = blocks.Dirt
 					} else if y == 0 {

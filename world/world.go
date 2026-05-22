@@ -106,22 +106,46 @@ func RenderChunk(c Chunk) {
 	for x := 0; x < xLen; x++ {
 		for y := 0; y < yLen; y++ {
 			for z := 0; z < 16; z++ {
-				if c.Blocks[x][y][z] == blocks.Air {
+				currentBlock := c.Blocks[x][y][z]
+				if currentBlock == blocks.Air || currentBlock == blocks.Water {
 					continue
 				}
 
 				wx := x + c.GlobalX*16
 				wz := z + c.GlobalZ*16
 
-				isVisible := false
-				if GetGlobalBlock(wx-1, y, wz) == blocks.Air || GetGlobalBlock(wx+1, y, wz) == blocks.Air ||
+				neighborIsAir := GetGlobalBlock(wx-1, y, wz) == blocks.Air || GetGlobalBlock(wx+1, y, wz) == blocks.Air ||
 					GetGlobalBlock(wx, y-1, wz) == blocks.Air || GetGlobalBlock(wx, y+1, wz) == blocks.Air ||
-					GetGlobalBlock(wx, y, wz-1) == blocks.Air || GetGlobalBlock(wx, y, wz+1) == blocks.Air {
-					isVisible = true
+					GetGlobalBlock(wx, y, wz-1) == blocks.Air || GetGlobalBlock(wx, y, wz+1) == blocks.Air
+
+				neighborIsWater := GetGlobalBlock(wx-1, y, wz) == blocks.Water || GetGlobalBlock(wx+1, y, wz) == blocks.Water ||
+					GetGlobalBlock(wx, y-1, wz) == blocks.Water || GetGlobalBlock(wx, y+1, wz) == blocks.Water ||
+					GetGlobalBlock(wx, y, wz-1) == blocks.Water || GetGlobalBlock(wx, y, wz+1) == blocks.Water
+
+				if neighborIsAir || neighborIsWater {
+					RenderBlock(currentBlock, wx, y, wz)
+				}
+			}
+		}
+	}
+
+	for x := 0; x < xLen; x++ {
+		for y := 0; y < yLen; y++ {
+			for z := 0; z < 16; z++ {
+				currentBlock := c.Blocks[x][y][z]
+				if currentBlock != blocks.Water {
+					continue
 				}
 
-				if isVisible {
-					RenderBlock(c.Blocks[x][y][z], wx, y, wz)
+				wx := x + c.GlobalX*16
+				wz := z + c.GlobalZ*16
+
+				neighborIsAir := GetGlobalBlock(wx-1, y, wz) == blocks.Air || GetGlobalBlock(wx+1, y, wz) == blocks.Air ||
+					GetGlobalBlock(wx, y-1, wz) == blocks.Air || GetGlobalBlock(wx, y+1, wz) == blocks.Air ||
+					GetGlobalBlock(wx, y, wz-1) == blocks.Air || GetGlobalBlock(wx, y, wz+1) == blocks.Air
+
+				if neighborIsAir {
+					RenderBlock(currentBlock, wx, y, wz)
 				}
 			}
 		}
