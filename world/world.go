@@ -20,6 +20,29 @@ type ChunkPos struct {
 
 var LoadedChunks = make(map[ChunkPos]*Chunk)
 
+var BlockModelRegistryInstance *BlockRegistry
+
+type BlockRegistry struct {
+	BlockModels map[blocks.Block]rl.Model
+}
+
+func (br *BlockRegistry) RegisterNewModel(block blocks.Block, cubeMesh rl.Mesh, path string) {
+	new_model := rl.LoadModelFromMesh(cubeMesh)
+	rl.SetMaterialTexture(new_model.Materials, rl.MapDiffuse, rl.LoadTexture(path))
+	br.BlockModels[block] = new_model
+}
+
+func BlockModelRegistry() *BlockRegistry {
+	if BlockModelRegistryInstance == nil {
+		cubeMesh := rl.GenMeshCube(1.0, 1.0, 1.0)
+		BlockModelRegistryInstance = &BlockRegistry{BlockModels: make(map[blocks.Block]rl.Model)}
+		BlockModelRegistryInstance.RegisterNewModel(blocks.Grass, cubeMesh, "assets/grass.png")
+		BlockModelRegistryInstance.RegisterNewModel(blocks.Dirt, cubeMesh, "assets/dirt.png")
+		BlockModelRegistryInstance.RegisterNewModel(blocks.Water, cubeMesh, "assets/water.png")
+	}
+	return BlockModelRegistryInstance
+}
+
 func GetGlobalBlock(worldX, worldY, worldZ int) blocks.Block {
 	if worldY < 0 || worldY >= 64 {
 		return blocks.Air
@@ -56,24 +79,14 @@ func SetGlobalBlock(worldX, worldY, worldZ int, b blocks.Block) bool {
 }
 
 func RenderBlock(block blocks.Block, x, y, z int) {
-	color := rl.Gray
-	switch block {
-	case blocks.Air:
+	RegistryInstance := BlockModelRegistry()
+	val, ok := RegistryInstance.BlockModels[block]
+
+	if !ok {
 		return
-	case blocks.Grass:
-		color = rl.Green
-	case blocks.Stone:
-		color = rl.DarkGray
-	case blocks.Dirt:
-		color = rl.DarkBrown
-	case blocks.Water:
-		color = rl.Blue
-	case blocks.Bedrock:
-		color = rl.Black
-	case blocks.Snow:
-		color = rl.White
 	}
-	rl.DrawCube(rl.NewVector3(float32(x), float32(y), float32(z)), 1.0, 1.0, 1.0, color)
+
+	rl.DrawModel(val, rl.NewVector3(float32(x), float32(y), float32(z)), 1.0, rl.White)
 }
 
 func RenderChunk(c Chunk) {

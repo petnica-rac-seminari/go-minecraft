@@ -4,9 +4,9 @@ import (
 	"math"
 
 	reljef "main/Reljef"
+	"main/oblaci"
 
 	nebo "main/dayNightCycle"
-	"main/oblaci"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 
@@ -18,7 +18,7 @@ import (
 const render_dist = 4
 
 func main() {
-	rl.InitWindow(1920, 1080, "Raylib Go - 3D Kocka i Skakanje")
+	rl.InitWindow(1600, 900, "Raylib Go - 3D Kocka i Skakanje")
 	defer rl.CloseWindow()
 
 	camera := rl.Camera3D{}
@@ -27,7 +27,6 @@ func main() {
 	camera.Up = rl.NewVector3(0.0, 1.0, 0.0)
 	camera.Fovy = 60.0
 	camera.Projection = rl.CameraPerspective
-
 	rl.DisableCursor()
 	rl.SetTargetFPS(60)
 
