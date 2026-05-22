@@ -7,9 +7,10 @@ import (
 )
 
 type Chunk struct {
-	GlobalX int
-	GlobalZ int
-	Blocks  [][][]blocks.Block
+	GlobalX  int
+	GlobalZ  int
+	Blocks   [][][]blocks.Block
+	Rendered bool
 }
 
 type WorldStruct struct {
@@ -57,12 +58,15 @@ func RenderBlock(block blocks.Block, x, y, z int) {
 	rl.DrawCube(rl.NewVector3(float32(x), float32(y), float32(z)), 1.0, 1.0, 1.0, color)
 }
 
-func RenderChunk(c Chunk, chunkX, chunkZ int) {
+func RenderChunk(c Chunk, x_offset int, y_offset int) {
 	for i, xBlock := range c.Blocks {
 		for j, yBlock := range xBlock {
 			for k, zBlock := range yBlock {
-				RenderBlock(zBlock, i+chunkX*16, j, k+chunkZ*16)
+				if zBlock != 0 {
+					RenderBlock(zBlock, i+x_offset*16, j, k+y_offset*16)
+				}
 			}
 		}
+
 	}
 }

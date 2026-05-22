@@ -1,10 +1,11 @@
 package main
 
 import (
+	reljef "main/Reljef"
+
 	rl "github.com/gen2brain/raylib-go/raylib"
 
 	//"main/blocks"
-	reljef "main/Reljef"
 	"main/world"
 )
 
@@ -13,29 +14,27 @@ func main() {
 	defer rl.CloseWindow()
 
 	camera := rl.Camera3D{}
-	camera.Position = rl.NewVector3(4.0, 24.0, 4.0)
+	camera.Position = rl.NewVector3(4.0, 70.0, 4.0)
 	camera.Target = rl.NewVector3(0.0, 1.0, 0.0)
 	camera.Up = rl.NewVector3(0.0, 1.0, 0.0)
-	camera.Fovy = 90.0
+	camera.Fovy = 60.0
 	camera.Projection = rl.CameraPerspective
 
 	rl.DisableCursor()
 	rl.SetTargetFPS(60)
 
 	var verticalVelocity float32 = 0.0
-	const gravity float32 = -1
-	const jumpForce float32 = 1
-	const groundLevel float32 = 24.0
+	const gravity float32 = -0.6
+	const jumpForce float32 = 0.15
+	const groundLevel float32 = 10.0
 	var isGrounded bool = true
-	var renderDistance int = 4
 
-	var generatedChunks [][]world.Chunk
-
-	generatedChunks = make([][]world.Chunk, renderDistance)
-	for i := 0; i < renderDistance; i++ {
-		generatedChunks[i] = make([]world.Chunk, renderDistance)
-		for j := 0; j < renderDistance; j++ {
-			generatedChunks[i][j] = reljef.GenerateChunk(i, j, 0.05, 8, 4, 0)
+	var chunkList [25]world.Chunk
+	index := 0
+	for z := 0; z < 5; z++ {
+		for x := 0; x < 5; x++ {
+			chunkList[index] = reljef.GenerateChunk(x*16, z*16)
+			index++
 		}
 	}
 
@@ -68,10 +67,8 @@ func main() {
 
 		// rl.DrawCube(rl.NewVector3(0.0, 1.0, 0.0), 2.0, 2.0, 2.0, rl.Blue)
 		// rl.DrawCubeWires(rl.NewVector3(0.0, 1.0, 0.0), 2.0, 2.0, 2.0, rl.DarkBlue)
-		for i := 0; i < renderDistance; i++ {
-			for j := 0; j < renderDistance; j++ {
-				world.RenderChunk(generatedChunks[i][j], i, j)
-			}
+		for j := 0; j < 25; j++ {
+			world.RenderChunk(chunkList[j], j%5, j/5)
 		}
 
 		rl.DrawGrid(20, 1.0)
