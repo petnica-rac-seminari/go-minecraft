@@ -39,14 +39,16 @@ func main() {
 
 	const maxReach = navigation.DefaultMaxReach
 	var lastHit navigation.RaycastHit
-	var time float32 = 0
+	var current_tick float32 = 0
 	var clouds []oblaci.CLOUDS = oblaci.GenerateClouds()
 
 	var jumpCtrl navigation.JumpInput
 	const eyeHeight = navigation.DefaultEyeHeight
 
+	sunce_model := nebo.RenderSun()
+
 	for !rl.WindowShouldClose() {
-		time += rl.GetFrameTime()
+		current_tick += rl.GetFrameTime()
 		rl.UpdateCamera(&camera, rl.CameraFirstPerson)
 
 		playerCX := int(math.Floor(float64(camera.Position.X) / 16.0))
@@ -111,10 +113,12 @@ func main() {
 			camera.Target.Y += verticalVelocity * rl.GetFrameTime()
 		}
 
+		oblaci.MoveClouds(clouds)
+
 		navigation.ApplyVerticalBlockPhysics(&camera, &verticalVelocity, &isGrounded, eyeHeight)
 
 		rl.BeginDrawing()
-		rl.ClearBackground(nebo.SkyColor(int(time)))
+		rl.ClearBackground(nebo.SkyColor(int(current_tick)))
 
 		rl.BeginMode3D(camera)
 
@@ -127,8 +131,8 @@ func main() {
 			}
 		}
 
-		oblaci.RenderCloud(clouds)
-
+		oblaci.DrawClouds(clouds)
+		rl.DrawModel(*sunce_model, nebo.MoveSun(float64(nebo.SkyBodyAngle(current_tick)), camera), 1.0, rl.White)
 		if lastHit.Hit {
 			navigation.DrawBlockOutline(lastHit.X, lastHit.Y, lastHit.Z, rl.Yellow)
 		}
