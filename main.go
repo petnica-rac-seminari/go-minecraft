@@ -30,6 +30,7 @@ func main() {
 	const jumpForce float32 = 0.15
 	const groundLevel float32 = 1.0
 	var isGrounded bool = true
+	var BlockToPlace blocks.Block = blocks.Grass
 
 	generatedChunk := reljef.GenerateChunk(0, 0, 0.1, 8, 0, 1)
 
@@ -48,11 +49,27 @@ func main() {
 		hit := navigation.Raycast(generatedChunk, camera.Position, dir, maxReach)
 		lastHit = hit
 
+		//Block placement and destruction
+		switch rl.GetKeyPressed() {
+		case rl.KeyOne:
+			BlockToPlace = blocks.Grass
+		case rl.KeyTwo:
+			BlockToPlace = blocks.Stone
+		case rl.KeyThree:
+			BlockToPlace = blocks.Dirt
+		case rl.KeyFour:
+			BlockToPlace = blocks.Water
+		case rl.KeyFive:
+			BlockToPlace = blocks.Bedrock
+		case rl.KeySix:
+			BlockToPlace = blocks.Snow
+		}
+
 		if rl.IsMouseButtonPressed(rl.MouseButtonLeft) && hit.Hit {
 			navigation.DestroyBlock(&generatedChunk, hit.X, hit.Y, hit.Z)
 		}
 		if rl.IsMouseButtonPressed(rl.MouseButtonRight) && hit.Hit {
-			navigation.PlaceAdjacent(&generatedChunk, hit, blocks.Grass)
+			navigation.PlaceAdjacent(&generatedChunk, hit, BlockToPlace)
 		}
 
 		if rl.IsKeyPressed(rl.KeySpace) && isGrounded {
