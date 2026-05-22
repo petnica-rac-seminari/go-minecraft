@@ -1,7 +1,11 @@
 package main
 
 import (
+	"math"
+
 	reljef "main/Reljef"
+
+	nebo "main/dayNightCycle"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 
@@ -10,13 +14,14 @@ import (
 	"main/world"
 )
 
+const render_dist = 4
+
 func main() {
-	rl.InitWindow(800, 600, "Raylib Go - 3D Kocka i Skakanje")
+	rl.InitWindow(1360, 800, "Raylib Go - 3D Kocka i Skakanje")
 	defer rl.CloseWindow()
 
-	// cela kamera full sjebana
-	camera := rl.Camera3D{} //
-	camera.Position = rl.NewVector3(4.0, 10.0, 4.0)
+	camera := rl.Camera3D{}
+	camera.Position = rl.NewVector3(4.0, 40.0, 4.0)
 	camera.Target = rl.NewVector3(0.0, 1.0, 0.0)
 	camera.Up = rl.NewVector3(0.0, 1.0, 0.0)
 	camera.Fovy = 60.0
@@ -26,30 +31,43 @@ func main() {
 	rl.SetTargetFPS(60)
 
 	var verticalVelocity float32 = 0.0
-	const gravity float32 = -0.6
-	const jumpForce float32 = 0.15
-	const groundLevel float32 = 1.0
+	const gravity float32 = -26.0
+	const jumpForce float32 = 8.5
 	var isGrounded bool = true
 	var BlockToPlace blocks.Block = blocks.Grass
 
-	generatedChunk := reljef.GenerateChunk(0, 0, 0.1, 8, 0, 1)
-
 	const maxReach = navigation.DefaultMaxReach
-	var lastHit navigation.RaycastHit //proveriti biblioteku
+	var lastHit navigation.RaycastHit
+	var time float32 = 0
 
 	var jumpCtrl navigation.JumpInput
-	const eyeHeight = navigation.DefaultEyeHeight //sta je ovo
+	const eyeHeight = navigation.DefaultEyeHeight
 
 	for !rl.WindowShouldClose() {
-		rl.UpdateCamera(&camera, rl.CameraFirstPerson) // kamera
+		time += rl.GetFrameTime()
+		rl.UpdateCamera(&camera, rl.CameraFirstPerson)
 
-		navigation.ApplyHorizontalCollision(&camera, generatedChunk, eyeHeight, navigation.PlayerHalfWidth)
+		playerCX := int(math.Floor(float64(camera.Position.X) / 16.0))
+		playerCZ := int(math.Floor(float64(camera.Position.Z) / 16.0))
+
+		halfDist := render_dist / 2
+		for z := -halfDist; z <= halfDist; z++ {
+			for x := -halfDist; x <= halfDist; x++ {
+				pos := world.ChunkPos{X: playerCX + x, Z: playerCZ + z}
+
+				if _, exists := world.LoadedChunks[pos]; !exists {
+					c := reljef.GenerateChunk(pos.X*16, pos.Z*16)
+					world.LoadedChunks[pos] = &c
+				}
+			}
+		}
+
+		navigation.ApplyHorizontalCollision(&camera, eyeHeight, navigation.PlayerHalfWidth)
 
 		dir := navigation.CameraDirection(camera)
-		hit := navigation.Raycast(generatedChunk, camera.Position, dir, maxReach)
+		hit := navigation.Raycast(camera.Position, dir, maxReach)
 		lastHit = hit
 
-		//Block placement and destruction
 		switch rl.GetKeyPressed() {
 		case rl.KeyOne:
 			BlockToPlace = blocks.Grass
@@ -62,11 +80,12 @@ func main() {
 		case rl.KeyFive:
 			BlockToPlace = blocks.Snow
 		}
+
 		if rl.IsMouseButtonPressed(rl.MouseButtonLeft) && hit.Hit {
-			navigation.DestroyBlock(&generatedChunk, hit.X, hit.Y, hit.Z)
+			navigation.DestroyBlock(hit.X, hit.Y, hit.Z)
 		}
 		if rl.IsMouseButtonPressed(rl.MouseButtonRight) && hit.Hit {
-			navigation.PlaceAdjacent(&generatedChunk, hit, BlockToPlace)
+			navigation.PlaceAdjacent(hit, BlockToPlace)
 		}
 
 		if rl.IsKeyPressed(rl.KeySpace) && isGrounded {
@@ -74,11 +93,11 @@ func main() {
 			isGrounded = false
 		}
 
-		if navigation.IsAirborne(generatedChunk, camera.Position, eyeHeight, navigation.PlayerHalfWidth) {
+		if navigation.IsAirborne(camera.Position, eyeHeight, navigation.PlayerHalfWidth) {
 			isGrounded = false
 		}
 
-		canJump := isGrounded && !navigation.IsAirborne(generatedChunk, camera.Position, eyeHeight, navigation.PlayerHalfWidth)
+		canJump := isGrounded && !navigation.IsAirborne(camera.Position, eyeHeight, navigation.PlayerHalfWidth)
 		if navigation.TryDoubleTapJump(&jumpCtrl, rl.GetTime(), rl.IsKeyPressed(rl.KeySpace), canJump) {
 			verticalVelocity = jumpForce
 			isGrounded = false
@@ -86,42 +105,37 @@ func main() {
 
 		if !isGrounded {
 			verticalVelocity += gravity * rl.GetFrameTime()
-			camera.Position.Y += verticalVelocity
-			camera.Target.Y += verticalVelocity
-
-			if camera.Position.Y <= groundLevel {
-				diff := groundLevel - camera.Position.Y
-				camera.Position.Y = groundLevel
-				camera.Target.Y += diff
-				verticalVelocity = 0.0
-				isGrounded = true
-			}
+			camera.Position.Y += verticalVelocity * rl.GetFrameTime()
+			camera.Target.Y += verticalVelocity * rl.GetFrameTime()
 		}
 
-		navigation.ApplyVerticalBlockPhysics(&camera, &verticalVelocity, &isGrounded, generatedChunk, eyeHeight)
+		c := nebo.SkyColor(int(time))
+		navigation.ApplyVerticalBlockPhysics(&camera, &verticalVelocity, &isGrounded, eyeHeight)
 
 		rl.BeginDrawing()
-		rl.ClearBackground(rl.RayWhite)
+		rl.ClearBackground(c)
 
 		rl.BeginMode3D(camera)
 
-		// rl.DrawCube(rl.NewVector3(0.0, 1.0, 0.0), 2.0, 2.0, 2.0, rl.Blue)
-		// rl.DrawCubeWires(rl.NewVector3(0.0, 1.0, 0.0), 2.0, 2.0, 2.0, rl.DarkBlue)
-		world.RenderChunk(generatedChunk)
+		for z := -halfDist; z <= halfDist; z++ {
+			for x := -halfDist; x <= halfDist; x++ {
+				pos := world.ChunkPos{X: playerCX + x, Z: playerCZ + z}
+				if chunk, exists := world.LoadedChunks[pos]; exists {
+					world.RenderChunk(*chunk)
+				}
+			}
+		}
 
 		if lastHit.Hit {
 			navigation.DrawBlockOutline(lastHit.X, lastHit.Y, lastHit.Z, rl.Yellow)
 		}
 
-		rl.DrawGrid(20, 1.0)
-
 		rl.EndMode3D()
 
 		rl.DrawFPS(10, 10)
-		rl.DrawText("WASD - Kretanje | Mis - Okretanje | Space - Skakanje", 10, 40, 20, rl.DarkGray)
-		rl.DrawText("LMB - Ukloni | RMB - Postavi Grass", 10, 70, 20, rl.DarkGray)
-		rl.DrawText("Space x2 - Skok | Kretanje po blokovima", 10, 100, 20, rl.DarkGray)
-		rl.DrawText("1 - Grass | 2 - Dirt | 3 - Stone | 4 - Water | 5 - Snow", 10, 550, 20, rl.White)
+		rl.DrawText("WASD - Kretanje | Mis - Okretanje | Space - Skok", 10, 40, 20, rl.DarkGray)
+		rl.DrawText("LMB - Unisti | RMB - Postavi blok", 10, 70, 20, rl.DarkGray)
+		rl.DrawText("1 - Grass | 2 - Dirt | 3 - Stone | 4 - Water | 5 - Snow", 10, 550, 20, rl.Black)
 
 		rl.EndDrawing()
 	}
