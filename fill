@@ -1,0 +1,81 @@
+package voda
+
+func RiverMap(chunkX, chunkZ int, riverWidth, frequency float64, seed int64) [][]float64 {
+    riverWidth /= 2
+
+    n, _ := noise.New(noise.OpenSimplex, seed)
+
+    var riverMap [][]float64
+
+
+    riverMap = make([][]float64, 64)
+    for i := 0; i < 64; i++ {
+        riverMap[i] = make([]float64, 64)
+    }
+
+    for i := 0; i < 64; i++ {
+        for j := 0; j < 64; j++ {
+            randomValue := (n.Eval64(float64(i+chunkX*64)*frequency, float64(j+chunkZ*64)*frequency) + 1) / 2
+            if randomValue > 0.5-riverWidth && randomValue < 0.5+riverWidth {
+                riverMap[i][j] = math.Abs(randomValue-0.5) / riverWidth
+            } else {
+                riverMap[i][j] = 0
+            }
+        }
+    }
+
+    return riverMap
+}
+
+
+
+	const (
+		BlockAir   = 0
+		BlockDirt  = 1
+		BlockRiver = 2
+	)
+
+type World struct {
+	Width, Height, Depth int
+	Blocks[][][]int
+}
+
+type NoiseGenerator interface {
+	Eval64(x, y float64) float64
+}
+
+func FillRivers(world *World, n NoiseGenerator, frequency, riverWidth float64) {
+	halfWidth := riverWidth / 2.0
+
+	for x := 0; x < world.Width; x++ {
+		for z := 0; z < world.Depth; z++ {
+			nx := float64(x) * frequency
+			nz := float64(z) * frequency
+
+			noiseVal := (n.Eval64(nx, nz) + 1.0) / 2.0
+
+			if noiseVal > 0.5-halfWidth && noiseVal < 0.5+halfWidth {
+				
+				groundHeight := -1
+				for y := world.Height - 1; y >= 0; y-- {
+					if world.Blocks[x][y][z] == BlockDirt {
+						groundHeight = y
+						break
+					}
+				}
+
+				if groundHeight != -1 {
+					minY := groundHeight - 3
+					if minY < 0 {
+						minY = 0
+					}
+					for y := groundHeight; y >= minY; y-- {
+						if world.Blocks[x][y][z] == BlockDirt {
+							world.Blocks[x][y][z] = BlockRiver
+						}
+					}
+				}
+			}
+		}
+	}
+}
