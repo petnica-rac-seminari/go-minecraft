@@ -12,7 +12,12 @@ func blockTopY(blockIndexY int) float32 {
 }
 
 func isSolid(b blocks.Block) bool {
-	return b != blocks.Air
+	if b == blocks.Air {
+		return false
+	} else if b == blocks.Water {
+		return false
+	}
+	return b != (blocks.Air)
 }
 
 func columnGroundY(chunk world.Chunk, worldX, worldZ float32) (groundY float32, ok bool) {
@@ -101,10 +106,10 @@ func ApplyHorizontalCollision(camera *rl.Camera3D, chunk world.Chunk, eyeHeight,
 	feetY := camera.Position.Y - eyeHeight
 	headY := camera.Position.Y
 
-	minWX := intFloor(camera.Position.X - halfWidth)
-	maxWX := intFloor(camera.Position.X + halfWidth)
-	minWZ := intFloor(camera.Position.Z - halfWidth)
-	maxWZ := intFloor(camera.Position.Z + halfWidth)
+	minWX := intFloor(camera.Position.X - halfWidth + 0.1)
+	maxWX := intFloor(camera.Position.X + halfWidth - 0.1)
+	minWZ := intFloor(camera.Position.Z - halfWidth + 0.1)
+	maxWZ := intFloor(camera.Position.Z + halfWidth - 0.1)
 	minLY := intFloor(feetY)
 	maxLY := intFloor(headY)
 

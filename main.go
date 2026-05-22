@@ -10,6 +10,127 @@ import (
 	"main/world"
 )
 
+func UpdateCamera(camera *rl.Camera, mode rl.CameraMode) {
+	var mousePositionDelta = rl.GetMouseDelta()
+
+	moveInWorldPlaneBool := mode == rl.CameraFirstPerson || mode == rl.CameraThirdPerson
+	var moveInWorldPlane uint8
+	if moveInWorldPlaneBool {
+		moveInWorldPlane = 1
+	}
+
+	rotateAroundTargetBool := mode == rl.CameraThirdPerson || mode == rl.CameraOrbital
+	var rotateAroundTarget uint8
+	if rotateAroundTargetBool {
+		rotateAroundTarget = 1
+	}
+
+	lockViewBool := mode == rl.CameraFirstPerson || mode == rl.CameraThirdPerson || mode == rl.CameraOrbital
+	var lockView uint8
+	if lockViewBool {
+		lockView = 1
+	}
+
+	var rotateUp uint8
+
+	if mode == rl.CameraOrbital {
+		// Orbital can just orbit
+		var rotation = rl.MatrixRotate(rl.GetCameraUp(camera), 0.5*rl.GetFrameTime())
+		var view = rl.Vector3Subtract(camera.Position, camera.Target)
+		view = rl.Vector3Transform(view, rotation)
+		camera.Position = rl.Vector3Add(camera.Target, view)
+	} else {
+		// Camera rotation
+		if rl.IsKeyDown(rl.KeyDown) {
+			rl.CameraPitch(camera, -0.03, lockView, rotateAroundTarget, rotateUp)
+		}
+		if rl.IsKeyDown(rl.KeyUp) {
+			rl.CameraPitch(camera, 0.03, lockView, rotateAroundTarget, rotateUp)
+		}
+		if rl.IsKeyDown(rl.KeyRight) {
+			rl.CameraYaw(camera, -0.03, rotateAroundTarget)
+		}
+		if rl.IsKeyDown(rl.KeyLeft) {
+			rl.CameraYaw(camera, 0.03, rotateAroundTarget)
+		}
+
+		// Camera movement
+		if !(rl.IsGamepadAvailable(0)) {
+			// Camera pan (for CameraFree)
+			if mode == rl.CameraFree && rl.IsMouseButtonDown(rl.MouseMiddleButton) {
+				var mouseDelta = rl.GetMouseDelta()
+				if mouseDelta.X > 0.0 {
+					rl.CameraMoveRight(camera, 0.2, moveInWorldPlane)
+				}
+				if mouseDelta.X < 0.0 {
+					rl.CameraMoveRight(camera, -0.2, moveInWorldPlane)
+				}
+				if mouseDelta.Y > 0.0 {
+					rl.CameraMoveUp(camera, -0.2)
+				}
+				if mouseDelta.Y < 0.0 {
+					rl.CameraMoveUp(camera, 0.2)
+				}
+			} else {
+				// Mouse support
+				rl.CameraYaw(camera, -mousePositionDelta.X*0.003, rotateAroundTarget)
+				rl.CameraPitch(camera, -mousePositionDelta.Y*0.003, lockView, rotateAroundTarget, rotateUp)
+			}
+
+			// Keyboard support
+			if rl.IsKeyDown(rl.KeyW) {
+				rl.CameraMoveForward(camera, 0.09, moveInWorldPlane)
+			}
+			if rl.IsKeyDown(rl.KeyA) {
+				rl.CameraMoveRight(camera, -0.09, moveInWorldPlane)
+			}
+			if rl.IsKeyDown(rl.KeyS) {
+				rl.CameraMoveForward(camera, -0.09, moveInWorldPlane)
+			}
+			if rl.IsKeyDown(rl.KeyD) {
+				rl.CameraMoveRight(camera, 0.09, moveInWorldPlane)
+			}
+		} else {
+			// Gamepad controller support
+			rl.CameraYaw(camera, -(rl.GetGamepadAxisMovement(0, rl.GamepadAxisRightX)*float32(2))*0.003, rotateAroundTarget)
+			rl.CameraPitch(camera, -(rl.GetGamepadAxisMovement(0, rl.GamepadAxisRightY)*float32(2))*0.003, lockView, rotateAroundTarget, rotateUp)
+
+			if rl.GetGamepadAxisMovement(0, rl.GamepadAxisLeftY) <= -0.25 {
+				rl.CameraMoveForward(camera, 0.09, moveInWorldPlane)
+			}
+			if rl.GetGamepadAxisMovement(0, rl.GamepadAxisLeftX) <= -0.25 {
+				rl.CameraMoveRight(camera, -0.09, moveInWorldPlane)
+			}
+			if rl.GetGamepadAxisMovement(0, rl.GamepadAxisLeftY) >= 0.25 {
+				rl.CameraMoveForward(camera, -0.09, moveInWorldPlane)
+			}
+			if rl.GetGamepadAxisMovement(0, rl.GamepadAxisLeftX) >= 0.25 {
+				rl.CameraMoveRight(camera, 0.09, moveInWorldPlane)
+			}
+		}
+
+		if mode == rl.CameraFree {
+			if rl.IsKeyDown(rl.KeySpace) {
+				rl.CameraMoveUp(camera, 0.09)
+			}
+			if rl.IsKeyDown(rl.KeyLeftControl) {
+				rl.CameraMoveUp(camera, -0.09)
+			}
+		}
+	}
+
+	if mode == rl.CameraThirdPerson || mode == rl.CameraOrbital || mode == rl.CameraFree {
+		// Zoom target distance
+		rl.CameraMoveToTarget(camera, -rl.GetMouseWheelMove())
+		if rl.IsKeyPressed(rl.KeyKpSubtract) {
+			rl.CameraMoveToTarget(camera, 2.0)
+		}
+		if rl.IsKeyPressed(rl.KeyKpAdd) {
+			rl.CameraMoveToTarget(camera, -2.0)
+		}
+	}
+}
+
 func main() {
 	rl.InitWindow(800, 600, "Raylib Go - 3D Kocka i Skakanje")
 	defer rl.CloseWindow()
@@ -54,14 +175,15 @@ func main() {
 		case rl.KeyOne:
 			BlockToPlace = blocks.Grass
 		case rl.KeyTwo:
-			BlockToPlace = blocks.Dirt
-		case rl.KeyThree:
 			BlockToPlace = blocks.Stone
+		case rl.KeyThree:
+			BlockToPlace = blocks.Dirt
 		case rl.KeyFour:
 			BlockToPlace = blocks.Water
 		case rl.KeyFive:
 			BlockToPlace = blocks.Snow
 		}
+
 		if rl.IsMouseButtonPressed(rl.MouseButtonLeft) && hit.Hit {
 			navigation.DestroyBlock(&generatedChunk, hit.X, hit.Y, hit.Z)
 		}
@@ -103,10 +225,7 @@ func main() {
 		rl.BeginDrawing()
 		rl.ClearBackground(rl.RayWhite)
 
-		rl.BeginMode3D(camera)
-
-		// rl.DrawCube(rl.NewVector3(0.0, 1.0, 0.0), 2.0, 2.0, 2.0, rl.Blue)
-		// rl.DrawCubeWires(rl.NewVector3(0.0, 1.0, 0.0), 2.0, 2.0, 2.0, rl.DarkBlue)
+		rl.BeginMode3D(camera) //koji kurac
 		world.RenderChunk(generatedChunk)
 
 		if lastHit.Hit {
@@ -121,7 +240,7 @@ func main() {
 		rl.DrawText("WASD - Kretanje | Mis - Okretanje | Space - Skakanje", 10, 40, 20, rl.DarkGray)
 		rl.DrawText("LMB - Ukloni | RMB - Postavi Grass", 10, 70, 20, rl.DarkGray)
 		rl.DrawText("Space x2 - Skok | Kretanje po blokovima", 10, 100, 20, rl.DarkGray)
-		rl.DrawText("1 - Grass | 2 - Dirt | 3 - Stone | 4 - Water | 5 - Snow", 10, 550, 20, rl.White)
+		rl.DrawText("1-grass | 2-stone | 3-dirt | 4-water | 5-snow", 10, 550, 20, rl.White)
 
 		rl.EndDrawing()
 	}
