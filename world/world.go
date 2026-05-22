@@ -19,6 +19,7 @@ type ChunkPos struct {
 }
 
 var LoadedChunks = make(map[ChunkPos]*Chunk)
+var LoadedStructures = make(map[ChunkPos]*Chunk)
 
 var BlockModelRegistryInstance *BlockRegistry
 

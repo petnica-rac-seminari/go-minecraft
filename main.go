@@ -5,6 +5,7 @@ import (
 
 	reljef "main/Reljef"
 	"main/oblaci"
+	"math/rand"
 
 	nebo "main/dayNightCycle"
 
@@ -16,6 +17,7 @@ import (
 )
 
 const render_dist = 3
+const seed = 100
 
 func main() {
 	rl.InitWindow(1600, 900, "Raylib Go - 3D Kocka i Skakanje")
@@ -29,6 +31,8 @@ func main() {
 	camera.Projection = rl.CameraPerspective
 	rl.DisableCursor()
 	rl.SetTargetFPS(60)
+	rng := rand.New(rand.NewSource(seed))
+	_ = rng
 
 	var verticalVelocity float32 = 0.0
 	const gravity float32 = -26.0
@@ -38,14 +42,15 @@ func main() {
 
 	const maxReach = navigation.DefaultMaxReach
 	var lastHit navigation.RaycastHit
-	var time float32 = 0
+	var currentTick float32 = 0
 	var clouds []oblaci.CLOUDS = oblaci.GenerateClouds()
+	sunce_model := nebo.RenderSun()
 
 	var jumpCtrl navigation.JumpInput
 	const eyeHeight = navigation.DefaultEyeHeight
 
 	for !rl.WindowShouldClose() {
-		time += rl.GetFrameTime()
+		currentTick += rl.GetFrameTime()
 		rl.UpdateCamera(&camera, rl.CameraFirstPerson)
 
 		playerCX := int(math.Floor(float64(camera.Position.X) / 16.0))
@@ -57,7 +62,7 @@ func main() {
 				pos := world.ChunkPos{X: playerCX + x, Z: playerCZ + z}
 
 				if _, exists := world.LoadedChunks[pos]; !exists {
-					c := reljef.GenerateChunk(pos.X*16, pos.Z*16)
+					c := reljef.GenerateChunk(pos.X*16, pos.Z*16, seed)
 					world.LoadedChunks[pos] = &c
 				}
 			}
@@ -112,8 +117,10 @@ func main() {
 
 		navigation.ApplyVerticalBlockPhysics(&camera, &verticalVelocity, &isGrounded, eyeHeight)
 
+		oblaci.MoveClouds(clouds, camera)
+
 		rl.BeginDrawing()
-		rl.ClearBackground(nebo.SkyColor(int(time)))
+		rl.ClearBackground(nebo.SkyColor(int(currentTick)))
 
 		rl.BeginMode3D(camera)
 
@@ -123,14 +130,19 @@ func main() {
 				if chunk, exists := world.LoadedChunks[pos]; exists {
 					world.RenderChunk(*chunk)
 				}
+				if structure, exists := world.LoadedStructures[pos]; exists {
+					world.RenderChunk(*structure)
+				}
 			}
 		}
 
-		oblaci.RenderCloud(clouds)
+		oblaci.DrawClouds(clouds)
 
 		if lastHit.Hit {
 			navigation.DrawBlockOutline(lastHit.X, lastHit.Y, lastHit.Z, rl.Yellow)
 		}
+
+		rl.DrawModel(*sunce_model, nebo.MoveSun(float64(nebo.SkyBodyAngle(currentTick)), camera), 1.0, rl.White)
 
 		rl.EndMode3D()
 
