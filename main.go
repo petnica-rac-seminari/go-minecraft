@@ -18,6 +18,7 @@ import (
 const render_dist = 3
 
 func main() {
+	rl.SetConfigFlags(rl.FlagWindowResizable)
 	rl.InitWindow(1600, 900, "Raylib Go - 3D Kocka i Skakanje")
 	defer rl.CloseWindow()
 
@@ -138,6 +139,7 @@ func main() {
 		rl.DrawText("WASD - Kretanje | Mis - Okretanje | Space - Skok", 10, 40, 20, rl.DarkGray)
 		rl.DrawText("LMB - Unisti | RMB - Postavi blok", 10, 70, 20, rl.DarkGray)
 		rl.DrawText("1 - Grass | 2 - Dirt | 3 - Stone | 4 - Water | 5 - Snow", 10, 550, 20, rl.Black)
+		rl.DrawCircle(int32(rl.GetScreenWidth())/2, int32(rl.GetScreenHeight())/2, 10, rl.White)
 
 		rl.EndDrawing()
 	}
