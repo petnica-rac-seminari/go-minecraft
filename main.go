@@ -17,7 +17,12 @@ import (
 const render_dist = 3
 
 func main() {
-	rl.InitWindow(1600, 900, "Raylib Go - 3D Kocka i Skakanje")
+	const windowX = 1920
+	const windowY = 1080
+
+	const buttonHeight = 100
+	const buttonWidth = 300
+	rl.InitWindow(windowX, windowY, "Raylib Go - 3D Kocka i Skakanje")
 	defer rl.CloseWindow()
 
 	camera := rl.Camera3D{}
@@ -26,9 +31,8 @@ func main() {
 	camera.Up = rl.NewVector3(0.0, 1.0, 0.0)
 	camera.Fovy = 60.0
 	camera.Projection = rl.CameraPerspective
-	rl.SetConfigFlags(rl.FlagWindowResizable)
-	rl.DisableCursor()
 	rl.SetTargetFPS(60)
+	rl.EnableCursor()
 
 	var verticalVelocity float32 = 0.0
 	const gravity float32 = -26.0
@@ -42,6 +46,9 @@ func main() {
 
 	var jumpCtrl navigation.JumpInput
 	const eyeHeight = navigation.DefaultEyeHeight
+	var isMenu = true
+
+	defer rl.CloseWindow()
 
 	for !rl.WindowShouldClose() {
 		time += rl.GetFrameTime()
@@ -109,34 +116,57 @@ func main() {
 			camera.Target.Y += verticalVelocity * rl.GetFrameTime()
 		}
 
-		c := nebo.SkyColor(int(time))
 		navigation.ApplyVerticalBlockPhysics(&camera, &verticalVelocity, &isGrounded, eyeHeight)
 
 		rl.BeginDrawing()
-		rl.ClearBackground(c)
 
-		rl.BeginMode3D(camera)
+		if isMenu == true {
 
-		for z := -halfDist; z <= halfDist; z++ {
-			for x := -halfDist; x <= halfDist; x++ {
-				pos := world.ChunkPos{X: playerCX + x, Z: playerCZ + z}
-				if chunk, exists := world.LoadedChunks[pos]; exists {
-					world.RenderChunk(*chunk)
+			rl.DrawRectangle(50, windowY-500, buttonWidth, buttonHeight, rl.Gray)
+			rl.DrawRectangle(50, windowY-350, buttonWidth, buttonHeight, rl.Gray)
+			rl.DrawRectangle(50, windowY-200, buttonWidth, buttonHeight, rl.Gray)
+
+			if rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
+				mX := rl.GetMouseX()
+				mY := rl.GetMouseY()
+
+				if mX > 50 && mX < 50+buttonWidth && mY > windowY-500 && mY < windowY-500+buttonHeight {
+					isMenu = false
+					rl.DisableCursor()
+				}
+
+				if mX > 50 && mX < 50+buttonWidth && mY > windowY-200 && mY < windowY-200+buttonHeight {
+					break
 				}
 			}
 		}
 
-		if lastHit.Hit {
-			navigation.DrawBlockOutline(lastHit.X, lastHit.Y, lastHit.Z, rl.Yellow)
+		if isMenu == false {
+			rl.DisableCursor()
+			rl.ClearBackground(nebo.SkyColor(int(time)))
+
+			rl.BeginMode3D(camera)
+
+			for z := -halfDist; z <= halfDist; z++ {
+				for x := -halfDist; x <= halfDist; x++ {
+					pos := world.ChunkPos{X: playerCX + x, Z: playerCZ + z}
+					if chunk, exists := world.LoadedChunks[pos]; exists {
+						world.RenderChunk(*chunk)
+					}
+				}
+			}
+
+			if lastHit.Hit {
+				navigation.DrawBlockOutline(lastHit.X, lastHit.Y, lastHit.Z, rl.Yellow)
+			}
+
+			rl.EndMode3D()
+
+			rl.DrawFPS(10, 10)
+			rl.DrawText("WASD - Kretanje | Mis - Okretanje | Space - Skok", 10, 40, 20, rl.DarkGray)
+			rl.DrawText("LMB - Unisti | RMB - Postavi blok", 10, 70, 20, rl.DarkGray)
+			rl.DrawText("1 - Grass | 2 - Dirt | 3 - Stone | 4 - Water | 5 - Snow", 10, 550, 20, rl.Black)
 		}
-
-		rl.EndMode3D()
-
-		rl.DrawFPS(10, 10)
-		rl.DrawText("WASD - Kretanje | Mis - Okretanje | Space - Skok", 10, 40, 20, rl.DarkGray)
-		rl.DrawText("LMB - Unisti | RMB - Postavi blok", 10, 70, 20, rl.DarkGray)
-		rl.DrawText("1 - Grass | 2 - Dirt | 3 - Stone | 4 - Water | 5 - Snow", 10, 550, 20, rl.Black)
-
 		rl.EndDrawing()
 	}
 }
