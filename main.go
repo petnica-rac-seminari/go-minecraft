@@ -54,17 +54,14 @@ func main() {
 		case rl.KeyOne:
 			BlockToPlace = blocks.Grass
 		case rl.KeyTwo:
-			BlockToPlace = blocks.Stone
-		case rl.KeyThree:
 			BlockToPlace = blocks.Dirt
+		case rl.KeyThree:
+			BlockToPlace = blocks.Stone
 		case rl.KeyFour:
 			BlockToPlace = blocks.Water
 		case rl.KeyFive:
-			BlockToPlace = blocks.Bedrock
-		case rl.KeySix:
 			BlockToPlace = blocks.Snow
 		}
-
 		if rl.IsMouseButtonPressed(rl.MouseButtonLeft) && hit.Hit {
 			navigation.DestroyBlock(&generatedChunk, hit.X, hit.Y, hit.Z)
 		}
@@ -124,6 +121,7 @@ func main() {
 		rl.DrawText("WASD - Kretanje | Mis - Okretanje | Space - Skakanje", 10, 40, 20, rl.DarkGray)
 		rl.DrawText("LMB - Ukloni | RMB - Postavi Grass", 10, 70, 20, rl.DarkGray)
 		rl.DrawText("Space x2 - Skok | Kretanje po blokovima", 10, 100, 20, rl.DarkGray)
+		rl.DrawText("1 - Grass | 2 - Dirt | 3 - Stone | 4 - Water | 5 - Snow", 10, 550, 20, rl.White)
 
 		rl.EndDrawing()
 	}
