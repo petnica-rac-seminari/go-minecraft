@@ -6,6 +6,14 @@ type Cord struct {
 	z int
 }
 
+type DeoPointer struct {
+}
+
+type Reke struct {
+	velike []VelikaReka
+	male   []MalaReka
+}
+
 type MalaReka struct {
 	rank int
 	deo  []Deo
@@ -21,8 +29,9 @@ type Potok struct {
 }
 
 type Deo struct {
-	start Cord
-	end   Cord
+	start   Cord
+	end     Cord
+	pointer DeoPointer
 }
 
 func (m *MalaReka) Add(d *Deo) {
@@ -33,4 +42,13 @@ func (v *VelikaReka) Add(d *Deo) {
 }
 func (p *Potok) Add(d *Deo) {
 	p.deo = append(p.deo, *d)
+}
+
+func (r *Reke) AddMale(mr *MalaReka) {
+	mr.rank = len(r.male)
+	r.male = append(r.male, *mr)
+}
+func (r *Reke) AddVelike(vr *VelikaReka) {
+	vr.rank = len(r.velike)
+	r.velike = append(r.velike, *vr)
 }
