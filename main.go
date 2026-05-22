@@ -15,7 +15,7 @@ import (
 	"main/world"
 )
 
-const render_dist = 4
+const render_dist = 3
 
 func main() {
 	rl.InitWindow(1600, 900, "Raylib Go - 3D Kocka i Skakanje")
