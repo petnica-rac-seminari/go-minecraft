@@ -15,45 +15,127 @@ type RaycastHit struct {
 	Distance   float32
 }
 
-func Raycast(origin, direction rl.Vector3, maxDist float32) RaycastHit {
-	steps := int(maxDist * 5)
-	stepSize := maxDist / float32(steps)
+func Raycast(chunk world.Chunk, origin, direction rl.Vector3, maxDist float32) RaycastHit {
+	dir := direction
+	length := rl.Vector3Length(dir)
+	if length < 1e-6 {
+		return RaycastHit{}
+	}
+	if math.Abs(float64(length)-1.0) > 0.01 {
+		dir = rl.Vector3Scale(dir, 1.0/length)
+	}
 
-	for i := 0; i < steps; i++ {
-		currentPos := rl.Vector3Add(origin, rl.Vector3Scale(direction, float32(i)*stepSize))
+	x := intFloor(origin.X)
+	y := intFloor(origin.Y)
+	z := intFloor(origin.Z)
 
-		x := int(math.Floor(float64(currentPos.X)))
-		y := int(math.Floor(float64(currentPos.Y)))
-		z := int(math.Floor(float64(currentPos.Z)))
+	stepX, stepY, stepZ := 0, 0, 0
+	var tDeltaX, tDeltaY, tDeltaZ float32
+	tMaxX, tMaxY, tMaxZ := float32(math.MaxFloat32), float32(math.MaxFloat32), float32(math.MaxFloat32)
 
-		if world.GetGlobalBlock(x, y, z) != blocks.Air {
-			prevPos := rl.Vector3Add(origin, rl.Vector3Scale(direction, float32(i-1)*stepSize))
-			px := int(math.Floor(float64(prevPos.X)))
-			py := int(math.Floor(float64(prevPos.Y)))
-			pz := int(math.Floor(float64(prevPos.Z)))
+	if dir.X > 0 {
+		stepX = 1
+		tDeltaX = 1.0 / dir.X
+		tMaxX = (float32(x+1) - origin.X) / dir.X
+	} else if dir.X < 0 {
+		stepX = -1
+		tDeltaX = -1.0 / dir.X
+		tMaxX = (origin.X - float32(x)) / -dir.X
+	} else {
+		tDeltaX = float32(math.MaxFloat32)
+	}
 
+	if dir.Y > 0 {
+		stepY = 1
+		tDeltaY = 1.0 / dir.Y
+		tMaxY = (float32(y+1) - origin.Y) / dir.Y
+	} else if dir.Y < 0 {
+		stepY = -1
+		tDeltaY = -1.0 / dir.Y
+		tMaxY = (origin.Y - float32(y)) / -dir.Y
+	} else {
+		tDeltaY = float32(math.MaxFloat32)
+	}
+
+	if dir.Z > 0 {
+		stepZ = 1
+		tDeltaZ = 1.0 / dir.Z
+		tMaxZ = (float32(z+1) - origin.Z) / dir.Z
+	} else if dir.Z < 0 {
+		stepZ = -1
+		tDeltaZ = -1.0 / dir.Z
+		tMaxZ = (origin.Z - float32(z)) / -dir.Z
+	} else {
+		tDeltaZ = float32(math.MaxFloat32)
+	}
+
+	prevStepX, prevStepY, prevStepZ := 0, 0, 0
+
+	for {
+		lx, ly, lz, ok := WorldToLocal(chunk, x, y, z)
+		if !ok {
+			return RaycastHit{}
+		}
+
+		if chunk.Blocks[lx][ly][lz] != blocks.Air {
 			return RaycastHit{
 				Hit:      true,
-				X:        x,
-				Y:        y,
-				Z:        z,
-				NX:       px - x,
-				NY:       py - y,
-				NZ:       pz - z,
-				Distance: float32(i) * stepSize,
+				X:        lx,
+				Y:        ly,
+				Z:        lz,
+				NX:       -prevStepX,
+				NY:       -prevStepY,
+				NZ:       -prevStepZ,
+				Distance: nextT(tMaxX, tMaxY, tMaxZ, tDeltaX, tDeltaY, tDeltaZ),
+			}
+		}
+
+		if tMaxX < tMaxY {
+			if tMaxX < tMaxZ {
+				if tMaxX > maxDist {
+					return RaycastHit{}
+				}
+				prevStepX, prevStepY, prevStepZ = stepX, 0, 0
+				x += stepX
+				tMaxX += tDeltaX
+			} else {
+				if tMaxZ > maxDist {
+					return RaycastHit{}
+				}
+				prevStepX, prevStepY, prevStepZ = 0, 0, stepZ
+				z += stepZ
+				tMaxZ += tDeltaZ
+			}
+		} else {
+			if tMaxY < tMaxZ {
+				if tMaxY > maxDist {
+					return RaycastHit{}
+				}
+				prevStepX, prevStepY, prevStepZ = 0, stepY, 0
+				y += stepY
+				tMaxY += tDeltaY
+			} else {
+				if tMaxZ > maxDist {
+					return RaycastHit{}
+				}
+				prevStepX, prevStepY, prevStepZ = 0, 0, stepZ
+				z += stepZ
+				tMaxZ += tDeltaZ
 			}
 		}
 	}
-	return RaycastHit{}
 }
 
-func DestroyBlock(x, y, z int) bool {
-	return world.SetGlobalBlock(x, y, z, blocks.Air)
-}
-
-func PlaceAdjacent(hit RaycastHit, b blocks.Block) bool {
-	if !hit.Hit || b == blocks.Air {
-		return false
+func nextT(tMaxX, tMaxY, tMaxZ, tDeltaX, tDeltaY, tDeltaZ float32) float32 {
+	t := tMaxX - tDeltaX
+	if tMaxY-tDeltaY < t {
+		t = tMaxY - tDeltaY
 	}
-	return world.SetGlobalBlock(hit.X+hit.NX, hit.Y+hit.NY, hit.Z+hit.NZ, b)
+	if tMaxZ-tDeltaZ < t {
+		t = tMaxZ - tDeltaZ
+	}
+	if t < 0 {
+		return 0
+	}
+	return t
 }

@@ -11,30 +11,26 @@ func blockTopY(blockIndexY int) float32 {
 	return float32(blockIndexY) + 0.5
 }
 
-func columnGroundY(worldX, worldZ float32, feetY float32) (groundY float32, ok bool) {
-	wx := intFloor(worldX)
-	wz := intFloor(worldZ)
+func isSolid(b blocks.Block) bool {
+	return b != blocks.Air
+}
 
-	// Počinjemo pretragu od bloka u kojem su noge/struk prema dole
-	startWY := intFloor(feetY + 0.5)
-	if startWY >= ChunkSizeY {
-		startWY = ChunkSizeY - 1
-	}
-	if startWY < 0 {
+func columnGroundY(chunk world.Chunk, worldX, worldZ float32) (groundY float32, ok bool) {
+	lx, _, lz, inChunk := WorldToLocal(chunk, intFloor(worldX), 0, intFloor(worldZ))
+	if !inChunk {
 		return 0, false
 	}
 
-	for wy := startWY; wy >= 0; wy-- {
-		if world.GetGlobalBlock(wx, wy, wz) != blocks.Air {
-			return blockTopY(wy), true
+	for ly := ChunkSizeY - 1; ly >= 0; ly-- {
+		if isSolid(chunk.Blocks[lx][ly][lz]) {
+			return blockTopY(ly), true
 		}
 	}
 	return 0, false
 }
 
-func HighestGroundY(pos rl.Vector3, halfWidth, eyeHeight float32) (groundY float32, ok bool) {
-	feetY := pos.Y - eyeHeight
-
+func HighestGroundY(chunk world.Chunk, pos rl.Vector3, halfWidth, eyeHeight float32) (groundY float32, ok bool) {
+	_ = eyeHeight
 	samples := [4][2]float32{
 		{pos.X - halfWidth, pos.Z - halfWidth},
 		{pos.X + halfWidth, pos.Z - halfWidth},
@@ -44,8 +40,7 @@ func HighestGroundY(pos rl.Vector3, halfWidth, eyeHeight float32) (groundY float
 
 	found := false
 	for _, s := range samples {
-		// Prosleđujemo feetY direktno umesto maxAllowedY
-		top, columnOK := columnGroundY(s[0], s[1], feetY)
+		top, columnOK := columnGroundY(chunk, s[0], s[1])
 		if !columnOK {
 			continue
 		}
@@ -57,8 +52,8 @@ func HighestGroundY(pos rl.Vector3, halfWidth, eyeHeight float32) (groundY float
 	return groundY, found
 }
 
-func IsAirborne(pos rl.Vector3, eyeHeight, halfWidth float32) bool {
-	groundY, ok := HighestGroundY(pos, halfWidth, eyeHeight)
+func IsAirborne(chunk world.Chunk, pos rl.Vector3, eyeHeight, halfWidth float32) bool {
+	groundY, ok := HighestGroundY(chunk, pos, halfWidth, eyeHeight)
 	if !ok {
 		return true
 	}
@@ -66,13 +61,13 @@ func IsAirborne(pos rl.Vector3, eyeHeight, halfWidth float32) bool {
 	return feetY > groundY+GroundSnapEpsilon
 }
 
-func aabbOverlapsBlock(pos rl.Vector3, halfWidth, feetY, headY float32, wx, wy, wz int) bool {
-	bMinX := float32(wx) - 0.5
-	bMaxX := float32(wx) + 0.5
-	bMinY := float32(wy) - 0.5
-	bMaxY := float32(wy) + 0.5
-	bMinZ := float32(wz) - 0.5
-	bMaxZ := float32(wz) + 0.5
+func aabbOverlapsBlock(pos rl.Vector3, halfWidth, feetY, headY float32, lx, ly, lz int) bool {
+	bMinX := float32(lx) - 0.5
+	bMaxX := float32(lx) + 0.5
+	bMinY := float32(ly) - 0.5
+	bMaxY := float32(ly) + 0.5
+	bMinZ := float32(lz) - 0.5
+	bMaxZ := float32(lz) + 0.5
 
 	pMinX := pos.X - halfWidth
 	pMaxX := pos.X + halfWidth
@@ -102,7 +97,7 @@ func resolveHorizontalAxis(pos *float32, halfWidth float32, blockCenter int) {
 	}
 }
 
-func ApplyHorizontalCollision(camera *rl.Camera3D, eyeHeight, halfWidth float32) {
+func ApplyHorizontalCollision(camera *rl.Camera3D, chunk world.Chunk, eyeHeight, halfWidth float32) {
 	feetY := camera.Position.Y - eyeHeight
 	headY := camera.Position.Y
 
@@ -110,16 +105,26 @@ func ApplyHorizontalCollision(camera *rl.Camera3D, eyeHeight, halfWidth float32)
 	maxWX := intFloor(camera.Position.X + halfWidth)
 	minWZ := intFloor(camera.Position.Z - halfWidth)
 	maxWZ := intFloor(camera.Position.Z + halfWidth)
-	minLY := intFloor(feetY + 0.1)
+	minLY := intFloor(feetY)
 	maxLY := intFloor(headY)
 
 	for wx := minWX; wx <= maxWX; wx++ {
 		for wz := minWZ; wz <= maxWZ; wz++ {
+			lx, _, lz, inChunk := WorldToLocal(chunk, wx, 0, wz)
+			if !inChunk {
+				continue
+			}
 			for ly := minLY; ly <= maxLY; ly++ {
-				if world.GetGlobalBlock(wx, ly, wz) == blocks.Air {
+				if ly < 0 || ly >= ChunkSizeY {
 					continue
 				}
-				if !aabbOverlapsBlock(camera.Position, halfWidth, feetY+0.1, headY, wx, ly, wz) {
+				if !InBounds(lx, ly, lz) {
+					continue
+				}
+				if !isSolid(chunk.Blocks[lx][ly][lz]) {
+					continue
+				}
+				if !aabbOverlapsBlock(camera.Position, halfWidth, feetY, headY, wx, ly, wz) {
 					continue
 				}
 
@@ -132,24 +137,43 @@ func ApplyHorizontalCollision(camera *rl.Camera3D, eyeHeight, halfWidth float32)
 	}
 }
 
-func ApplyVerticalBlockPhysics(camera *rl.Camera3D, velocity *float32, grounded *bool, eyeHeight float32) {
+func headHitsSolid(chunk world.Chunk, pos rl.Vector3, halfWidth float32) bool {
+	headY := pos.Y
+	minWX := intFloor(pos.X - halfWidth)
+	maxWX := intFloor(pos.X + halfWidth)
+	minWZ := intFloor(pos.Z - halfWidth)
+	maxWZ := intFloor(pos.Z + halfWidth)
+	ly := intFloor(headY)
+
+	for wx := minWX; wx <= maxWX; wx++ {
+		for wz := minWZ; wz <= maxWZ; wz++ {
+			lx, _, lz, inChunk := WorldToLocal(chunk, wx, ly, wz)
+			if !inChunk || ly < 0 || ly >= ChunkSizeY {
+				continue
+			}
+			if isSolid(chunk.Blocks[lx][ly][lz]) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func ApplyVerticalBlockPhysics(camera *rl.Camera3D, velocity *float32, grounded *bool, chunk world.Chunk, eyeHeight float32) {
 	halfWidth := float32(PlayerHalfWidth)
 
-	if IsAirborne(camera.Position, eyeHeight, halfWidth) {
+	if IsAirborne(chunk, camera.Position, eyeHeight, halfWidth) {
 		*grounded = false
 	}
 
-	groundY, ok := HighestGroundY(camera.Position, halfWidth, eyeHeight)
+	groundY, ok := HighestGroundY(chunk, camera.Position, halfWidth, eyeHeight)
 	if !ok {
 		return
 	}
 
 	feetY := camera.Position.Y - eyeHeight
 
-	headWX := intFloor(camera.Position.X)
-	headWZ := intFloor(camera.Position.Z)
-	headWY := intFloor(camera.Position.Y)
-	if *velocity > 0 && world.GetGlobalBlock(headWX, headWY, headWZ) != blocks.Air {
+	if *velocity > 0 && headHitsSolid(chunk, camera.Position, halfWidth) {
 		*velocity = 0
 	}
 
