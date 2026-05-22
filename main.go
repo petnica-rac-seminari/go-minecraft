@@ -111,11 +111,10 @@ func main() {
 			camera.Target.Y += verticalVelocity * rl.GetFrameTime()
 		}
 
-		c := nebo.SkyColor(int(time))
 		navigation.ApplyVerticalBlockPhysics(&camera, &verticalVelocity, &isGrounded, eyeHeight)
 
 		rl.BeginDrawing()
-		rl.ClearBackground(c)
+		rl.ClearBackground(nebo.SkyColor(int(time)))
 
 		rl.BeginMode3D(camera)
 
@@ -128,7 +127,7 @@ func main() {
 			}
 		}
 
-		oblaci.RenderCloud(clouds, camera.Position.X, camera.Position.Y, camera.Position.Z)
+		oblaci.RenderCloud(clouds)
 
 		if lastHit.Hit {
 			navigation.DrawBlockOutline(lastHit.X, lastHit.Y, lastHit.Z, rl.Yellow)

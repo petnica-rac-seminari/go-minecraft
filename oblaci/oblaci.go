@@ -27,12 +27,12 @@ func GenerateClouds() []CLOUDS {
 	return clouds
 }
 
-func RenderCloud(clouds []CLOUDS, offsetX, offsetY, offsetZ float32) {
+func RenderCloud(clouds []CLOUDS) {
 	transparentWhite := rl.Fade(rl.White, 0.8)
 
 	for _, c := range clouds {
-		rl.DrawCube(rl.NewVector3(c.x+float32(offsetX), c.y+float32(offsetY), c.z+float32(offsetZ)), 3.0, 1.2, 3.0, transparentWhite)
-		rl.DrawCube(rl.NewVector3(c.x-2.0+float32(offsetX), c.y+0.5+float32(offsetY), c.z+float32(offsetZ)), 2.0, 1.0, 2.0, transparentWhite)
-		rl.DrawCube(rl.NewVector3(c.x+2.0+float32(offsetX), c.y+0.5+float32(offsetY), c.z+float32(offsetZ)), 2.0, 1.0, 2.0, transparentWhite)
+		rl.DrawCube(rl.NewVector3(c.x, c.y, c.z), 3.0, 1.2, 3.0, transparentWhite)
+		rl.DrawCube(rl.NewVector3(c.x-2.0, c.y+0.5, c.z), 2.0, 1.0, 2.0, transparentWhite)
+		rl.DrawCube(rl.NewVector3(c.x+2.0, c.y+0.5, c.z), 2.0, 1.0, 2.0, transparentWhite)
 	}
 }
