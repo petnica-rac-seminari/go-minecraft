@@ -97,8 +97,8 @@ func MoveSun(skyBodyAngle float64, camera rl.Camera) rl.Vector3 {
 
 func MoveMoon(skyBodyAngle float64, camera rl.Camera) rl.Vector3 {
 	return rl.Vector3{
-		X: -(float32(math.Cos(skyBodyAngle))*30 + camera.Position.X),
-		Y: -(float32(math.Sin(skyBodyAngle))*30 + 30),
-		Z: -camera.Position.Z,
+		X: (float32(math.Cos(skyBodyAngle+math.Pi))*50 + camera.Position.X),
+		Y: (float32(math.Sin(skyBodyAngle+math.Pi))*50 + 30),
+		Z: camera.Position.Z,
 	}
 }
