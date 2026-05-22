@@ -10,7 +10,6 @@ const (
 	Dirt
 	Stone
 	Snow
-
-// Log
-// Leaves
+	Log
+	Leaves
 )

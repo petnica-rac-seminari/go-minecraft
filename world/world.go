@@ -41,6 +41,8 @@ func BlockModelRegistry() *BlockRegistry {
 		BlockModelRegistryInstance.RegisterNewModel(blocks.Water, cubeMesh, "assets/water.png")
 		BlockModelRegistryInstance.RegisterNewModel(blocks.Stone, cubeMesh, "assets/stone.png")
 		BlockModelRegistryInstance.RegisterNewModel(blocks.Bedrock, cubeMesh, "assets/bedrock.png")
+		BlockModelRegistryInstance.RegisterNewModel(blocks.Log, cubeMesh, "assets/log.png")
+		BlockModelRegistryInstance.RegisterNewModel(blocks.Leaves, cubeMesh, "assets/leaves.png")
 	}
 	return BlockModelRegistryInstance
 }
