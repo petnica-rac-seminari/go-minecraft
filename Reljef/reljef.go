@@ -66,8 +66,8 @@ func newNoise(seedMod int, br_oct int, startX, startY int) []float64 {
 func GenerateChunk(startX, startZ int) world.Chunk {
 	chunk := make([][][]blocks.Block, 16)
 	for x := 0; x < 16; x++ {
-		chunk[x] = make([][]blocks.Block, 16)
-		for y := 0; y < 16; y++ {
+		chunk[x] = make([][]blocks.Block, 64)
+		for y := 0; y < 64; y++ {
 			chunk[x][y] = make([]blocks.Block, 16)
 		}
 	}
@@ -115,5 +115,5 @@ func GenerateChunk(startX, startZ int) world.Chunk {
 		}
 	}
 
-	return world.Chunk{startX, startZ, chunk, false}
+	return world.Chunk{GlobalX: startX / 16, GlobalZ: startZ / 16, Blocks: chunk, Rendered: false}
 }
