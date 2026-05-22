@@ -120,3 +120,21 @@ func RenderChunk(c Chunk) {
 		}
 	}
 }
+
+func WorldToLocal(chunk Chunk, wx, wy, wz int) (lx, ly, lz int) {
+	lx = wx - chunk.GlobalX*16
+	ly = wy
+	lz = wz - chunk.GlobalZ*16
+	return lx, ly, lz
+}
+
+func LocalToWorld(chunk Chunk, lx, ly, lz int) (wx, wy, wz int) { //mozda nije dobro, prekopiro sam dimijevo otp
+	wx = lx + chunk.GlobalX*16
+	wy = ly
+	wz = lz - chunk.GlobalZ*16
+	return lx, ly, lz
+}
+
+// func Highlight() {
+// 	return
+// }

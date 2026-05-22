@@ -1,9 +1,11 @@
 package main
 
 import (
+	//"fmt"
 	"math"
 
 	reljef "main/Reljef"
+	nav "main/navigation"
 	"main/oblaci"
 
 	nebo "main/dayNightCycle"
@@ -11,7 +13,7 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 
 	"main/blocks"
-	"main/navigation"
+	//"main/navigation"
 	"main/world"
 )
 
@@ -30,23 +32,14 @@ func main() {
 	rl.DisableCursor()
 	rl.SetTargetFPS(60)
 
-	var verticalVelocity float32 = 0.0
-	const gravity float32 = -26.0
-	const jumpForce float32 = 8.5
-	var isGrounded bool = true
 	var BlockToPlace blocks.Block = blocks.Grass
 
-	const maxReach = navigation.DefaultMaxReach
-	var lastHit navigation.RaycastHit
 	var time float32 = 0
 	var clouds []oblaci.CLOUDS = oblaci.GenerateClouds()
 
-	var jumpCtrl navigation.JumpInput
-	const eyeHeight = navigation.DefaultEyeHeight
-
 	for !rl.WindowShouldClose() {
 		time += rl.GetFrameTime()
-		rl.UpdateCamera(&camera, rl.CameraFirstPerson)
+		nav.HandleMovement(&camera)
 
 		playerCX := int(math.Floor(float64(camera.Position.X) / 16.0))
 		playerCZ := int(math.Floor(float64(camera.Position.Z) / 16.0))
@@ -63,12 +56,6 @@ func main() {
 			}
 		}
 
-		navigation.ApplyHorizontalCollision(&camera, eyeHeight, navigation.PlayerHalfWidth)
-
-		dir := navigation.CameraDirection(camera)
-		hit := navigation.Raycast(camera.Position, dir, maxReach)
-		lastHit = hit
-
 		switch rl.GetKeyPressed() {
 		case rl.KeyOne:
 			BlockToPlace = blocks.Grass
@@ -81,36 +68,9 @@ func main() {
 		case rl.KeyFive:
 			BlockToPlace = blocks.Snow
 		}
-
-		if rl.IsMouseButtonPressed(rl.MouseButtonLeft) && hit.Hit {
-			navigation.DestroyBlock(hit.X, hit.Y, hit.Z)
+		if BlockToPlace == blocks.Air {
+			BlockToPlace = blocks.Bedrock
 		}
-		if rl.IsMouseButtonPressed(rl.MouseButtonRight) && hit.Hit {
-			navigation.PlaceAdjacent(hit, BlockToPlace)
-		}
-
-		if rl.IsKeyPressed(rl.KeySpace) && isGrounded {
-			verticalVelocity = jumpForce
-			isGrounded = false
-		}
-
-		if navigation.IsAirborne(camera.Position, eyeHeight, navigation.PlayerHalfWidth) {
-			isGrounded = false
-		}
-
-		canJump := isGrounded && !navigation.IsAirborne(camera.Position, eyeHeight, navigation.PlayerHalfWidth)
-		if navigation.TryDoubleTapJump(&jumpCtrl, rl.GetTime(), rl.IsKeyPressed(rl.KeySpace), canJump) {
-			verticalVelocity = jumpForce
-			isGrounded = false
-		}
-
-		if !isGrounded {
-			verticalVelocity += gravity * rl.GetFrameTime()
-			camera.Position.Y += verticalVelocity * rl.GetFrameTime()
-			camera.Target.Y += verticalVelocity * rl.GetFrameTime()
-		}
-
-		navigation.ApplyVerticalBlockPhysics(&camera, &verticalVelocity, &isGrounded, eyeHeight)
 
 		rl.BeginDrawing()
 		rl.ClearBackground(nebo.SkyColor(int(time)))
@@ -127,10 +87,6 @@ func main() {
 		}
 
 		oblaci.RenderCloud(clouds)
-
-		if lastHit.Hit {
-			navigation.DrawBlockOutline(lastHit.X, lastHit.Y, lastHit.Z, rl.Yellow)
-		}
 
 		rl.EndMode3D()
 
