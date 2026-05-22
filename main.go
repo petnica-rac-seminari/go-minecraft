@@ -1,9 +1,9 @@
 package main
 
 import (
-	"fmt"
 	reljef "main/Reljef"
 	nebo "main/daynightcycle"
+	"main/oblaci"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 
@@ -12,6 +12,7 @@ import (
 )
 
 func main() {
+
 	rl.InitWindow(800, 600, "Raylib Go - 3D Kocka i Skakanje")
 	defer rl.CloseWindow()
 
@@ -33,7 +34,11 @@ func main() {
 	const groundLevel float32 = 10.0
 	var isGrounded bool = true
 	var time float32 = 0
+	var clouds []oblaci.CLOUDS = oblaci.GenerateClouds()
+
 	generatedChunk := reljef.GenerateChunk(0, 0, 0.1, 8, 0, 1)
+
+	// fmt.Println(clouds)
 
 	for !rl.WindowShouldClose() {
 		rl.UpdateCamera(&camera, rl.CameraFirstPerson)
@@ -57,20 +62,19 @@ func main() {
 			}
 		}
 
-		c := nebo.SkyColor(int(time))
-
 		rl.BeginDrawing()
-		rl.ClearBackground(c)
-		fmt.Println(c)
+		rl.ClearBackground(nebo.SkyColor(int(time)))
 
 		rl.BeginMode3D(camera)
 
 		// rl.DrawCube(rl.NewVector3(0.0, 1.0, 0.0), 2.0, 2.0, 2.0, rl.Blue)
 		// rl.DrawCubeWires(rl.NewVector3(0.0, 1.0, 0.0), 2.0, 2.0, 2.0, rl.DarkBlue)
 		world.RenderChunk(generatedChunk)
+		oblaci.RenderCloud(clouds)
 
 		rl.DrawGrid(20, 1.0)
 
+		// oblaci.DrawClouds()
 		rl.EndMode3D()
 
 		rl.DrawFPS(10, 10)
