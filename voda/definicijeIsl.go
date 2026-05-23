@@ -1,11 +1,17 @@
 package voda
 
 const (
-	baseHeight int = 20 // Visina na kojoj potok postaje reka // file Potok.go
+	baseHeight                  int = 20 // Visina na kojoj potok postaje reka // file Potok.go
+	radiusPretrageZaIzvore      int = 512
+	brojIzvoraURadiosu          int = 10
+	minUdaljenostIzmedjuIzvora  int = 45
+	visinaOdVrhaSvetaZaIzvor    int = 5
+	minVisinaZaGenerisanjeIzvor int = 85
 )
 
 var (
-	worldReke Reke
+	worldReke   Reke
+	listaIzvora map[Cord]bool
 )
 
 type Cord struct {

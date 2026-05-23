@@ -1,23 +1,35 @@
 package voda
 
-import (
-	"main/blocks"
-)
+import "math"
 
-func PostaviIzvore(world *World) {
-	for i := 0; i < len(world.Chunks); i++ {
-		chunk := world.Chunks[i]
-		najvisiY := -1
-		for y := 64; y > 0; y-- {
-			if chunk.Blocks[y] != blocks.Air {
-				najvisiY = y
-				break
+type OnlyXandZCord struct {
+	x int
+	z int
+}
+
+func ValidneCordinateZaIzvor(mapaZaIzvore map[int][]OnlyXandZCord) []OnlyXandZCord {
+	for i := minVisinaZaGenerisanjeIzvor; i <= World.hight-visinaOdVrhaSvetaZaIzvor; i++ {
+		for _, j := range mapaZaIzvore[i] {
+			postoji := true
+			for l, _ := range listaIzvora { // funkcija math.Abc je jebeno sranje
+				if math.Abs(float64(j.x-l.x)) <= float64(minUdaljenostIzmedjuIzvora) || math.Abs(float64(j.z-l.z)) <= float64(minUdaljenostIzmedjuIzvora) {
+					postoji = false
+				}
+			}
+			if postoji {
+				listaIzvora[Cord{x: j.x, y: i, z: j.z}] = false
 			}
 		}
+	}
+}
 
-		if najvisiY != -1 && najvisiY+1 < 64 {
-			if chunk.Blocks[najvisiY+1] == blocks.Air {
-				chunk.Blocks[najvisiY+1] = blocks.Water
+func PostaviIzvore(PozicijaIgraca *Cord) {
+	mapaZaIzvore := make(map[int][]OnlyXandZCord)
+	for i := -radiusPretrageZaIzvore; i <= radiusPretrageZaIzvore; i++ {
+		for j := -radiusPretrageZaIzvore; j <= radiusPretrageZaIzvore; j++ {
+			h := hight(PozicijaIgraca.x+i, PozicijaIgraca.z+j)
+			if h >= minVisinaZaGenerisanjeIzvor {
+				mapaZaIzvore[h] = append(mapaZaIzvore[h], OnlyXandZCord{x: i, z: j})
 			}
 		}
 	}
