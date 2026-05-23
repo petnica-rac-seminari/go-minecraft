@@ -41,12 +41,12 @@ func MoveClouds(clouds []CLOUDS) {
 	}
 }
 
-func RenderCloud(c CLOUDS) {
+func RenderCloud(c CLOUDS, playerPos rl.Vector3) {
 
 	transparentWhite := rl.Fade(rl.White, 0.8)
 
 	rl.DrawCube(
-		rl.NewVector3(c.x, c.y, c.z),
+		rl.NewVector3(c.x+playerPos.X, c.y, c.z+playerPos.Z),
 		3.0,
 		1.2,
 		3.0,
@@ -54,7 +54,7 @@ func RenderCloud(c CLOUDS) {
 	)
 
 	rl.DrawCube(
-		rl.NewVector3(c.x-2.0, c.y+0.5, c.z),
+		rl.NewVector3(c.x-2.0+playerPos.X, c.y+0.5, c.z+playerPos.Z),
 		2.0,
 		1.0,
 		2.0,
@@ -62,7 +62,7 @@ func RenderCloud(c CLOUDS) {
 	)
 
 	rl.DrawCube(
-		rl.NewVector3(c.x+2.0, c.y+0.5, c.z),
+		rl.NewVector3(c.x+2.0+playerPos.X, c.y+0.5, c.z+playerPos.Z),
 		2.0,
 		1.0,
 		2.0,
@@ -70,9 +70,9 @@ func RenderCloud(c CLOUDS) {
 	)
 }
 
-func DrawClouds(clouds []CLOUDS) {
+func DrawClouds(clouds []CLOUDS, playerPos rl.Vector3) {
 
 	for _, c := range clouds {
-		RenderCloud(c)
+		RenderCloud(c, playerPos)
 	}
 }

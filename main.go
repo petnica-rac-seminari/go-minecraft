@@ -2,7 +2,7 @@ package main
 
 import (
 	reljef "main/Reljef"
-	nebo "main/daynightcycle"
+	nebo "main/nebo"
 	"main/oblaci"
 	"math/rand"
 	"time"
@@ -79,7 +79,7 @@ func main() {
 		// rl.DrawCube(rl.NewVector3(0.0, 1.0, 0.0), 2.0, 2.0, 2.0, rl.Blue)
 		// rl.DrawCubeWires(rl.NewVector3(0.0, 1.0, 0.0), 2.0, 2.0, 2.0, rl.DarkBlue)
 		world.RenderChunk(generatedChunk)
-		oblaci.DrawClouds(clouds)
+		oblaci.DrawClouds(clouds, camera.Position)
 
 		rl.DrawModel(*sunce_model, nebo.MoveSun(float64(nebo.SkyBodyAngle(currentTick)), camera), 1.0, rl.White)
 		rl.DrawModel(*moonModel, nebo.MoveMoon(float64(nebo.SkyBodyAngle(currentTick)), camera), 1.0, rl.White)
