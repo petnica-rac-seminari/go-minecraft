@@ -6,7 +6,7 @@ const (
 	brojIzvoraURadiosu          int = 10
 	minUdaljenostIzmedjuIzvora  int = 45
 	visinaOdVrhaSvetaZaIzvor    int = 5
-	minVisinaZaGenerisanjeIzvor int = 85
+	minVisinaZaGenerisanjeIzvor int = 44
 	velikaHight                 int = 12
 )
 
