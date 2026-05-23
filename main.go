@@ -39,6 +39,7 @@ func main() {
 	var isGrounded bool = true
 	var currentTick float32 = 0
 	var clouds []oblaci.CLOUDS = oblaci.GenerateClouds()
+	nebo.GenerateStars(150)
 
 	sunce_model := nebo.RenderSun()
 	moonModel := nebo.RenderMoon()
@@ -81,8 +82,17 @@ func main() {
 		world.RenderChunk(generatedChunk)
 		oblaci.DrawClouds(clouds, camera.Position)
 
-		rl.DrawModel(*sunce_model, nebo.MoveSun(float64(nebo.SkyBodyAngle(currentTick)), camera), 1.0, rl.White)
-		rl.DrawModel(*moonModel, nebo.MoveMoon(float64(nebo.SkyBodyAngle(currentTick)), camera), 1.0, rl.White)
+		if nebo.IsSunVisible(int64(currentTick)) {
+			rl.DrawModel(*sunce_model, nebo.MoveSunByAngle(nebo.SkyBodyAngle(currentTick), camera), 1.0, rl.White)
+		}
+
+		if nebo.IsMoonVisible(int64(currentTick)) {
+			rl.DrawModel(*moonModel, nebo.MoveMoonByAngle(nebo.SkyBodyAngle(currentTick), camera), 1.0, rl.White)
+		}
+
+		if nebo.IsNight(int64(currentTick)) {
+			nebo.DrawStars(camera)
+		}
 
 		rl.DrawGrid(20, 1.0)
 
