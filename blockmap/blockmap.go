@@ -1,8 +1,6 @@
-package main
+package blockmap
 
 import (
-	"fmt"
-
 	"github.com/KEINOS/go-noise"
 )
 
@@ -91,15 +89,4 @@ func HeightMap(playerX, playerZ, seed int) [][]int {
 	}
 
 	return coords
-}
-
-func main() {
-	coords := HeightMap(0, 0, 100)
-
-	for x := 0; x < width; x++ {
-		for z := 0; z < height; z++ {
-			fmt.Printf("%v ", coords[x][z])
-		}
-		fmt.Println()
-	}
 }
