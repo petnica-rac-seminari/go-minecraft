@@ -1,4 +1,4 @@
-package oblaci
+package nebo
 
 import (
 	"math/rand"

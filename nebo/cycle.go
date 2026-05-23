@@ -1,6 +1,7 @@
 package nebo
 
 import (
+	"fmt"
 	"image/color"
 	"math"
 	"math/rand"
@@ -18,6 +19,53 @@ const (
 type STAR struct {
 	Position rl.Vector3
 	Size     float32
+}
+
+var clouds []CLOUDS = GenerateClouds()
+
+var sunTexture rl.Texture2D
+var moonTexture rl.Texture2D
+var distanceToSatelites float64 = 50
+var igorModel rl.Model
+var stefanModel rl.Model
+
+func HandleNebo(camera rl.Camera, currentTick float32) {
+	if Stars == nil {
+		fmt.Print("AAAA")
+		GenerateStars(150)
+		sunTexture = rl.LoadTexture("igortabis.png")
+		moonTexture = rl.LoadTexture("stefmesec.png")
+		igorModel = rl.LoadModelFromMesh(rl.GenMeshPlane(15, 15, 256, 256))
+		stefanModel = rl.LoadModelFromMesh(rl.GenMeshPlane(7, 7, 256, 256))
+	}
+
+	MoveClouds(clouds)
+	DrawClouds(clouds, camera.Position)
+	DrawStars(camera)
+
+	rl.SetMaterialTexture(igorModel.Materials, rl.MapDiffuse, sunTexture)
+	rl.SetMaterialTexture(stefanModel.Materials, rl.MapDiffuse, moonTexture)
+	rl.DrawModelEx(igorModel, MoveSun(camera, currentTick, 0), rl.NewVector3(0, 0, 1), currentTick*1.4, rl.NewVector3(1, 1, 1), rl.White)
+	rl.DrawModelEx(stefanModel, MoveSun(camera, currentTick, math.Pi), rl.NewVector3(0, 0, 1), currentTick*1.4, rl.NewVector3(1, 1, 1), rl.White)
+	// rl.DrawCube(MoveSun(camera, currentTick))
+	// rl.DrawBillboard(camera, sunTexture, MoveSun(camera, currentTick), 10, rl.White)
+
+	// sunPos := MoveSunByAngle(SkyBodyAngle(currentTick), camera)
+	// _, yaw := getFacingRotation(sunPos, camera)
+	// rl.DrawModelEx(*sunce_model, sunPos, rl.NewVector3(0, 1, 0), yaw, rl.NewVector3(1, 1, 1), rl.White)
+}
+
+func getFacingRotation(modelPos rl.Vector3, camera rl.Camera3D) (pitch, yaw float32) {
+	dirX := camera.Position.X - modelPos.X
+	dirY := camera.Position.Y - modelPos.Y
+	dirZ := camera.Position.Z - modelPos.Z
+
+	yaw = float32(math.Atan2(float64(dirX), float64(dirZ))) * 180 / math.Pi
+
+	horizontal := float32(math.Sqrt(float64(dirX*dirX + dirZ*dirZ)))
+	pitch = float32(math.Atan2(float64(dirY), float64(horizontal))) * 180 / math.Pi
+
+	return pitch, yaw
 }
 
 var Stars []STAR
@@ -47,6 +95,8 @@ func GenerateStars(count int) {
 		})
 	}
 }
+
+var starPos []rl.Vector3
 
 func DrawStars(camera rl.Camera) {
 
@@ -106,7 +156,7 @@ func SkyColor(currentTick int64) color.RGBA {
 	return color.RGBA{uint8(clamp(hR, 0, 255)), uint8(clamp(hG, 0, 255)), uint8(clamp(hB, 0, 255)), 255}
 }
 
-func IsNight(currentTick int64) bool {
+/*func IsNight(currentTick int64) bool {
 	day := currentTick % dayDuration
 	return day >= tick60sec && day < tick120sec+tick30sec
 }
@@ -123,7 +173,7 @@ func IsSunVisible(currentTick int64) bool {
 func IsMoonVisible(currentTick int64) bool {
 	day := currentTick % dayDuration
 	return day >= tick60sec && day < tick120sec+tick30sec
-}
+}*/
 
 func clamp(v float64, lo, hi float64) float64 {
 	if v < lo {
@@ -135,10 +185,10 @@ func clamp(v float64, lo, hi float64) float64 {
 	return v
 }
 
-func RenderSun() (model *rl.Model) {
+/*func RenderSun() (model *rl.Model) {
 
-	sunce_texture := rl.LoadTexture("sunce.png")
-	sunce_mesh := rl.GenMeshSphere(2.0, 32, 32)
+	sunce_texture := rl.LoadTexture("igortabis2.png")
+	sunce_mesh := rl.GenMeshCube(10, 10, 10)
 
 	sunce_model := rl.LoadModelFromMesh(sunce_mesh)
 	rl.SetMaterialTexture(sunce_model.Materials, rl.MapDiffuse, sunce_texture)
@@ -148,54 +198,33 @@ func RenderSun() (model *rl.Model) {
 
 func RenderMoon() (model *rl.Model) {
 
-	moonTexture := rl.LoadTexture("moon.png")
-	moonMesh := rl.GenMeshSphere(1.5, 32, 32)
+	moonTexture := rl.LoadTexture("stefmesec.png")
+	moonMesh := rl.GenMeshCube(7, 7, 7)
 
 	moonModel := rl.LoadModelFromMesh(moonMesh)
 	rl.SetMaterialTexture(moonModel.Materials, rl.MapDiffuse, moonTexture)
 
 	return &moonModel
-}
+}*/
 
 func SkyBodyAngle(currentTick float32) float32 {
 	currentTime := (currentTick - float32(int(currentTick)/240*240))
 	temp := ((currentTime / 240.0) * 360.0) * math.Pi / 180.0
-	return temp + math.Pi/2 + 1.0
+	return temp + math.Pi/2 + 1.0*6
 }
 
-func MoveSun(skyBodyAngle int64, camera rl.Camera) rl.Vector3 {
-	angle := float64(skyBodyAngle-1) + math.Pi/2
+func MoveSun(camera rl.Camera, currentTick float32, offset float32) rl.Vector3 {
+	skyBodyAngle := float64(SkyBodyAngle(currentTick) + offset)
+	return rl.Vector3{
+		X: float32(math.Cos(float64(skyBodyAngle))*float64(distanceToSatelites)) + camera.Position.X,
+		Y: float32(math.Sin(float64(skyBodyAngle))*float64(distanceToSatelites)) + camera.Position.Y,
+		Z: camera.Position.Z,
+	}
+	/*skyBodyAngle := int64(SkyBodyAngle(currentTick))
+	angle := float64(skyBodyAngle) + math.Pi/2
 	return rl.Vector3{
 		X: float32(math.Cos(angle))*50 + camera.Position.X,
 		Y: float32(math.Sin(angle))*50 + 30,
 		Z: camera.Position.Z,
-	}
-}
-
-func MoveSunByAngle(skyBodyAngle float32, camera rl.Camera) rl.Vector3 {
-	angle := float64(skyBodyAngle - 1)
-	return rl.Vector3{
-		X: float32(math.Cos(angle))*50 + camera.Position.X,
-		Y: float32(math.Sin(angle))*50 + 30,
-		Z: camera.Position.Z,
-	}
-}
-func MoveMoonByAngle(skyBodyAngle float32, camera rl.Camera) rl.Vector3 {
-	angle := float64(skyBodyAngle-1) + math.Pi
-	return rl.Vector3{
-		X: float32(math.Cos(angle))*30 + camera.Position.X,
-		Y: float32(math.Sin(angle))*20 + 10,
-		Z: camera.Position.Z,
-	}
-}
-
-func MoveMoon(currentTick int64, camera rl.Camera) rl.Vector3 {
-	day := currentTick % dayDuration
-	phase := float64(day-tick60sec) / float64(tick120sec+tick30sec-tick60sec)
-	angle := phase * math.Pi
-	return rl.Vector3{
-		X: float32(math.Cos(angle))*30 + camera.Position.X,
-		Y: float32(math.Sin(angle))*30 + 30,
-		Z: camera.Position.Z,
-	}
+	}*/
 }
