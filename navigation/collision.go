@@ -15,6 +15,7 @@ func columnGroundY(worldX, worldZ float32, feetY float32) (groundY float32, ok b
 	wx := intFloor(worldX)
 	wz := intFloor(worldZ)
 
+	// Počinjemo pretragu od bloka u kojem su noge/struk prema dole
 	startWY := intFloor(feetY + 0.5)
 	if startWY >= ChunkSizeY {
 		startWY = ChunkSizeY - 1
@@ -43,6 +44,7 @@ func HighestGroundY(pos rl.Vector3, halfWidth, eyeHeight float32) (groundY float
 
 	found := false
 	for _, s := range samples {
+		// Prosleđujemo feetY direktno umesto maxAllowedY
 		top, columnOK := columnGroundY(s[0], s[1], feetY)
 		if !columnOK {
 			continue

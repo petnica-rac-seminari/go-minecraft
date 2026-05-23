@@ -47,6 +47,7 @@ func main() {
 	var currentTick float32 = 0
 	var clouds []oblaci.CLOUDS = oblaci.GenerateClouds()
 	sunce_model := nebo.RenderSun()
+	var dim bool = true
 
 	var jumpCtrl navigation.JumpInput
 	const eyeHeight = navigation.DefaultEyeHeight
@@ -66,8 +67,34 @@ func main() {
 					pos := world.ChunkPos{X: playerCX + x, Z: playerCZ + z}
 
 					if _, exists := world.LoadedChunks[pos]; !exists {
-						c := reljef.GenerateChunk(pos.X*16, pos.Z*16, menu.Seed)
-						world.LoadedChunks[pos] = &c
+						if dim {
+							c := reljef.GenerateOW(pos.X*16, pos.Z*16, menu.Seed)
+							world.LoadedChunks[pos] = &c
+						} else {
+							c := reljef.GenerateNether(pos.X*16, pos.Z*16, menu.Seed)
+							world.LoadedChunks[pos] = &c
+						}
+					}
+				}
+			}
+
+			if rl.GetKeyPressed() == rl.KeyG {
+				camera.Position.Y += 5
+				world.LoadedChunks = make(map[world.ChunkPos]*world.Chunk)
+				dim = !dim
+				for z := -halfDist; z <= halfDist; z++ {
+					for x := -halfDist; x <= halfDist; x++ {
+						pos := world.ChunkPos{X: playerCX + x, Z: playerCZ + z}
+
+						if _, exists := world.LoadedChunks[pos]; !exists {
+							if dim {
+								c := reljef.GenerateOW(pos.X*16, pos.Z*16, menu.Seed)
+								world.LoadedChunks[pos] = &c
+							} else {
+								c := reljef.GenerateNether(pos.X*16, pos.Z*16, menu.Seed)
+								world.LoadedChunks[pos] = &c
+							}
+						}
 					}
 				}
 			}
@@ -120,6 +147,7 @@ func main() {
 			}
 
 			navigation.ApplyVerticalBlockPhysics(&camera, &verticalVelocity, &isGrounded, eyeHeight)
+
 			oblaci.MoveClouds(clouds, camera)
 		}
 
@@ -128,13 +156,12 @@ func main() {
 		if !menu.IsMenu {
 			rl.DisableCursor()
 			rl.ClearBackground(nebo.SkyColor(int(currentTick)))
-
 			rl.BeginMode3D(camera)
 
 			playerCX := int(math.Floor(float64(camera.Position.X) / 16.0))
 			playerCZ := int(math.Floor(float64(camera.Position.Z) / 16.0))
-			halfDist := render_dist / 2
 
+			halfDist := render_dist / 2
 			for z := -halfDist; z <= halfDist; z++ {
 				for x := -halfDist; x <= halfDist; x++ {
 					pos := world.ChunkPos{X: playerCX + x, Z: playerCZ + z}
@@ -161,7 +188,6 @@ func main() {
 			rl.DrawText("LMB - Unisti | RMB - Postavi blok", 10, 70, 20, rl.DarkGray)
 			rl.DrawText("1 - Grass | 2 - Dirt | 3 - Stone | 4 - Water | 5 - Snow", 10, 550, 20, rl.Black)
 			rl.DrawCircle(int32(rl.GetScreenWidth())/2, int32(rl.GetScreenHeight())/2, 10, rl.White)
-
 		} else {
 			rl.ClearBackground(rl.DarkGray)
 			menu.Crtaj()
