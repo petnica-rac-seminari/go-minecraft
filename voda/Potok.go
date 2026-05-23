@@ -59,6 +59,13 @@ func GeneratePotok(cordsForPotok Cord) {
 		dio.start = cordsForPotok
 		findNearestAir(&cordsForPotok)
 		dio.end = cordsForPotok
+		if dio.start.y > 80 {
+			dio.sirina = 1
+		} else if dio.start.y > 60 {
+			dio.sirina = 2
+		} else {
+			dio.sirina = 3
+		}
 		privremeniPotok.Add(&dio)
 	}
 	worldReke.AddPotoci(&privremeniPotok)
