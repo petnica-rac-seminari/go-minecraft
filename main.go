@@ -15,7 +15,7 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-const render_dist = 4
+const render_dist = 7
 
 func main() {
 	rl.SetConfigFlags(rl.FlagWindowResizable)
@@ -79,7 +79,6 @@ func main() {
 			}
 
 			if rl.GetKeyPressed() == rl.KeyG {
-				camera.Position.Y += 5
 				world.LoadedChunks = make(map[world.ChunkPos]*world.Chunk)
 				dim = !dim
 				for z := -halfDist; z <= halfDist; z++ {
@@ -97,6 +96,33 @@ func main() {
 						}
 					}
 				}
+
+				pos := world.ChunkPos{X: playerCX, Z: playerCZ}
+				playerX := (int(math.Abs(float64(camera.Position.X))) % 16)
+				playerZ := (int(math.Abs(float64(camera.Position.Z))) % 16)
+				playerY := int(camera.Position.Y)
+
+				if playerX > 13 {
+					if playerZ > 13 {
+						reljef.GeneratePortal(playerX-4, playerY, playerZ-4, world.LoadedChunks[pos].Blocks, dim)
+					} else if playerZ < 3 {
+						reljef.GeneratePortal(playerX-4, playerY, playerZ+4, world.LoadedChunks[pos].Blocks, dim)
+					} else {
+						reljef.GeneratePortal(playerX-4, playerY, playerZ, world.LoadedChunks[pos].Blocks, dim)
+					}
+				} else if playerX < 3 {
+					if playerZ > 13 {
+						reljef.GeneratePortal(playerX+4, playerY, playerZ-4, world.LoadedChunks[pos].Blocks, dim)
+					} else if playerZ < 3 {
+						reljef.GeneratePortal(playerX+4, playerY, playerZ+4, world.LoadedChunks[pos].Blocks, dim)
+					} else {
+						reljef.GeneratePortal(playerX+4, playerY, playerZ, world.LoadedChunks[pos].Blocks, dim)
+					}
+				} else {
+					reljef.GeneratePortal(playerX, playerY, playerZ, world.LoadedChunks[pos].Blocks, dim)
+				}
+
+				camera.Position.Y += 5
 			}
 
 			navigation.ApplyHorizontalCollision(&camera, eyeHeight, navigation.PlayerHalfWidth)
@@ -148,14 +174,14 @@ func main() {
 
 			navigation.ApplyVerticalBlockPhysics(&camera, &verticalVelocity, &isGrounded, eyeHeight)
 
-			oblaci.MoveClouds(clouds, camera)
+			oblaci.MoveClouds(clouds, camera.Position.Y)
 		}
 
 		rl.BeginDrawing()
 
 		if !menu.IsMenu {
 			rl.DisableCursor()
-			rl.ClearBackground(nebo.SkyColor(int(currentTick)))
+			rl.ClearBackground(nebo.SkyColor(int(currentTick), dim))
 			rl.BeginMode3D(camera)
 
 			playerCX := int(math.Floor(float64(camera.Position.X) / 16.0))
@@ -174,7 +200,7 @@ func main() {
 				}
 			}
 
-			oblaci.DrawClouds(clouds)
+			oblaci.DrawClouds(clouds, rl.Vector3{camera.Position.X, camera.Position.Y, camera.Position.Z})
 			if lastHit.Hit {
 				navigation.DrawBlockOutline(lastHit.X, lastHit.Y, lastHit.Z, rl.Yellow)
 			}

@@ -14,4 +14,6 @@ const (
 	Leaves
 	Netherrack
 	Sand
+	Sudomil_bot
+	Sudomil_top
 )
