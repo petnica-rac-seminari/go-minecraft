@@ -73,9 +73,9 @@ func DrawStars(camera rl.Camera) {
 
 func SkyColor(currentTick int64) color.RGBA {
 	day := currentTick % dayDuration
-	dayColor := color.RGBA{R: 140, G: 184, B: 255, A: 255}
-	sunsetColor := color.RGBA{R: 142, G: 77, B: 37, A: 255}
-	nightColor := color.RGBA{R: 20, G: 36, B: 69, A: 255}
+	dayColor := color.RGBA{R: 140, G: 184, B: 255}
+	sunsetColor := color.RGBA{R: 142, G: 77, B: 37}
+	nightColor := color.RGBA{R: 20, G: 36, B: 69}
 
 	var hR, hG, hB float64
 
@@ -166,8 +166,8 @@ func SkyBodyAngle(currentTick float32) float32 {
 func MoveSun(skyBodyAngle int64, camera rl.Camera) rl.Vector3 {
 	angle := float64(skyBodyAngle-1) + math.Pi/2
 	return rl.Vector3{
-		X: float32(math.Cos(angle))*30 + camera.Position.X,
-		Y: float32(math.Sin(angle))*30 + 30,
+		X: float32(math.Cos(angle))*50 + camera.Position.X,
+		Y: float32(math.Sin(angle))*50 + 30,
 		Z: camera.Position.Z,
 	}
 }
