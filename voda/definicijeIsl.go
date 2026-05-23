@@ -7,10 +7,11 @@ const (
 	minUdaljenostIzmedjuIzvora  int = 45
 	visinaOdVrhaSvetaZaIzvor    int = 5
 	minVisinaZaGenerisanjeIzvor int = 85
+	velikaHight                 int = 12
 )
 
 var (
-	worldReke   Reke
+	WorldReke   Reke
 	listaIzvora map[Cord]bool
 )
 
