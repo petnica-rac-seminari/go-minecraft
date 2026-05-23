@@ -14,11 +14,11 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-const render_dist = 3
+const render_dist = 5
 
 func main() {
 	rl.SetConfigFlags(rl.FlagWindowResizable)
-	rl.InitWindow(1920, 1080, "Raylib Go - 3D Kocka i Skakanje")
+	rl.InitWindow(1600, 900, "Raylib Go - 3D Kocka i Skakanje")
 	defer rl.CloseWindow()
 
 	// Muzika
@@ -34,7 +34,7 @@ func main() {
 	defer menu.UnloadujMenuSliku()
 
 	camera := rl.Camera3D{}
-	camera.Position = rl.NewVector3(4.0, 40.0, 4.0)
+	camera.Position = rl.NewVector3(4.0, 160.0, 4.0)
 	camera.Target = rl.NewVector3(0.0, 1.0, 0.0)
 	camera.Up = rl.NewVector3(0.0, 1.0, 0.0)
 	camera.Fovy = 90.0
@@ -57,10 +57,8 @@ func main() {
 		}
 
 		if !menu.IsMenu {
-
 			navigation.HandleBlockManipulation(&camera)
 			navigation.HandleMovement(&camera)
-
 			playerCX := int(math.Floor(float64(camera.Position.X) / 16.0))
 			playerCZ := int(math.Floor(float64(camera.Position.Z) / 16.0))
 
@@ -133,6 +131,7 @@ func main() {
 			}
 
 			oblaci.MoveClouds(clouds, camera.Position.Y)
+
 		}
 
 		rl.BeginDrawing()
@@ -170,6 +169,7 @@ func main() {
 
 			// Hotbar crtanje
 			menu.CrtajHotbar(navigation.SelectedBlock)
+
 		} else {
 			rl.ClearBackground(rl.DarkGray)
 			menu.Crtaj()
