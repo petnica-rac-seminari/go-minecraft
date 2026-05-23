@@ -21,6 +21,15 @@ func main() {
 	rl.InitWindow(1920, 1080, "Raylib Go - 3D Kocka i Skakanje")
 	defer rl.CloseWindow()
 
+	// Muzika
+	rl.InitAudioDevice()
+	defer rl.CloseAudioDevice()
+
+	music := rl.LoadMusicStream("muzika\\Minecraft.mp3")
+	defer rl.UnloadMusicStream(music)
+
+	rl.PlayMusicStream(music)
+
 	menu.UcitajMenuSliku()
 	defer menu.UnloadujMenuSliku()
 
@@ -42,6 +51,10 @@ func main() {
 
 	for !rl.WindowShouldClose() {
 		currentTick += rl.GetFrameTime()
+		rl.UpdateMusicStream(music)
+		if rl.IsMusicStreamPlaying(music) == false {
+			rl.PlayMusicStream(music)
+		}
 
 		if !menu.IsMenu {
 
