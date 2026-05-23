@@ -19,7 +19,7 @@ const render_dist = 4
 
 func main() {
 	rl.SetConfigFlags(rl.FlagWindowResizable)
-	rl.InitWindow(1600, 900, "Raylib Go - 3D Kocka i Skakanje")
+	rl.InitWindow(1920, 1080, "Raylib Go - 3D Kocka i Skakanje")
 	defer rl.CloseWindow()
 
 	menu.UcitajMenuSliku()
@@ -78,7 +78,10 @@ func main() {
 				}
 			}
 
-			if rl.GetKeyPressed() == rl.KeyG {
+			// SKLADIŠTIMO TASTER U PROMENLJIVU DA GA NE BISMO PROGUTALI!
+			trenutniTaster := rl.GetKeyPressed()
+
+			if trenutniTaster == rl.KeyG {
 				camera.Position.Y += 5
 				world.LoadedChunks = make(map[world.ChunkPos]*world.Chunk)
 				dim = !dim
@@ -105,7 +108,8 @@ func main() {
 			hit := navigation.Raycast(camera.Position, dir, maxReach)
 			lastHit = hit
 
-			switch rl.GetKeyPressed() {
+			// Sada switch koristi istu promenljivu i promena radi savršeno
+			switch trenutniTaster {
 			case rl.KeyOne:
 				BlockToPlace = blocks.Grass
 			case rl.KeyTwo:
@@ -186,8 +190,9 @@ func main() {
 			rl.DrawFPS(10, 10)
 			rl.DrawText("WASD - Kretanje | Mis - Okretanje | Space - Skok", 10, 40, 20, rl.DarkGray)
 			rl.DrawText("LMB - Unisti | RMB - Postavi blok", 10, 70, 20, rl.DarkGray)
-			rl.DrawText("1 - Grass | 2 - Dirt | 3 - Stone | 4 - Water | 5 - Snow", 10, 550, 20, rl.Black)
-			rl.DrawCircle(int32(rl.GetScreenWidth())/2, int32(rl.GetScreenHeight())/2, 10, rl.White)
+
+			// Hotbar crtanje
+			menu.CrtajHotbar(BlockToPlace)
 		} else {
 			rl.ClearBackground(rl.DarkGray)
 			menu.Crtaj()
