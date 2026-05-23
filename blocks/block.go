@@ -4,8 +4,8 @@ type Block int
 
 const (
 	Air Block = iota
-	Bedrock
 	Water
+	Bedrock
 	Grass
 	Dirt
 	Stone

@@ -1,7 +1,7 @@
 package main
 
 import (
-	//"fmt"
+	"fmt"
 	"math"
 
 	reljef "main/Reljef"
@@ -12,7 +12,7 @@ import (
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 
-	"main/blocks"
+	//"main/blocks"
 	//"main/navigation"
 	"main/world"
 )
@@ -31,8 +31,6 @@ func main() {
 	camera.Projection = rl.CameraPerspective
 	rl.DisableCursor()
 	rl.SetTargetFPS(60)
-
-	var BlockToPlace blocks.Block = blocks.Grass
 
 	var time float32 = 0
 	var clouds []oblaci.CLOUDS = oblaci.GenerateClouds()
@@ -58,22 +56,6 @@ func main() {
 			}
 		}
 
-		switch rl.GetKeyPressed() {
-		case rl.KeyOne:
-			BlockToPlace = blocks.Grass
-		case rl.KeyTwo:
-			BlockToPlace = blocks.Dirt
-		case rl.KeyThree:
-			BlockToPlace = blocks.Stone
-		case rl.KeyFour:
-			BlockToPlace = blocks.Water
-		case rl.KeyFive:
-			BlockToPlace = blocks.Snow
-		}
-		if BlockToPlace == blocks.Air {
-			BlockToPlace = blocks.Bedrock
-		}
-
 		rl.BeginDrawing()
 		rl.ClearBackground(nebo.SkyColor(int(time)))
 
@@ -96,6 +78,7 @@ func main() {
 		rl.DrawText("WASD - Kretanje | Mis - Okretanje | Space - Skok", 10, 40, 20, rl.DarkGray)
 		rl.DrawText("LMB - Unisti | RMB - Postavi blok", 10, 70, 20, rl.DarkGray)
 		rl.DrawText("1 - Grass | 2 - Dirt | 3 - Stone | 4 - Water | 5 - Snow", 10, 550, 20, rl.Black)
+		rl.DrawText(fmt.Sprintf("%d, %d, %d", int(camera.Position.X), int(camera.Position.Y), int(camera.Position.Z)), 50, 50, 20, rl.Yellow)
 
 		rl.EndDrawing()
 	}

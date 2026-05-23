@@ -1,9 +1,10 @@
 package navigation
 
 import (
-	"fmt"
+	//"fmt"
 	"math"
 
+	//"main/blocks"
 	"main/world"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -20,9 +21,11 @@ func cameraAngle(camera rl.Camera3D) rl.Vector3 {
 // 1. FIX: Give these actual values!
 // In 3D: Gravity pulls DOWN (-Y), Jumping pushes UP (+Y)
 const (
-	gravity   = -25.0 // Acceleration downwards per second
+	gravity   = -35.0 // Acceleration downwards per second
 	jumpForce = 8.5   // Instant upward velocity boost
 )
+
+var speed float32 = 5.0
 
 var yVelocity float32
 var last bool
@@ -36,8 +39,8 @@ func blockCoord(val float32) int {
 }
 
 func GetPlayerBoundingBox(camPos rl.Vector3) rl.BoundingBox {
-	radiusX := float32(0.3)
-	radiusZ := float32(0.3)
+	radiusX := float32(0.35)
+	radiusZ := float32(0.35)
 	playerHeight := float32(1.8)
 	eyeOffset := float32(1.6) // Distance from eyes (camera) down to feet
 
@@ -59,43 +62,10 @@ func HandleMovement(camera *rl.Camera3D) {
 	rl.CameraYaw(camera, -mousePositionDelta.X*0.003, 0)
 	rl.CameraPitch(camera, -mousePositionDelta.Y*0.003, 1, 0, rotateUp)
 
-	/*	proposedPos := rl.Vector3{camera.Position.X, camera.Position.Y, camera.Position.Z}
-		if rl.IsKeyDown(rl.KeyW) {
-			proposedPos.X += 0.09
-		}
-		if rl.IsKeyDown(rl.KeyA) {
-			proposedPos.Z += 0.09
-		}
-		if rl.IsKeyDown(rl.KeyS) {
-			proposedPos.X += 0.09
-		}
-		if rl.IsKeyDown(rl.KeyD) {
-			proposedPos.Z += 0.09
-		}*/
-
-	// Keyboard movement (X and Z axis)
-	if rl.IsKeyDown(rl.KeyW) {
-		rl.CameraMoveForward(camera, 0.09, 1)
-	}
-	if rl.IsKeyDown(rl.KeyA) {
-		rl.CameraMoveRight(camera, -0.09, 1)
-	}
-	if rl.IsKeyDown(rl.KeyS) {
-		rl.CameraMoveForward(camera, -0.09, 1)
-	}
-	if rl.IsKeyDown(rl.KeyD) {
-		rl.CameraMoveRight(camera, 0.09, 1)
-	}
-
 	// --- PHYSICS & VERTICAL MOVEMENT ---
 
 	// First, check if we are standing on something
 	grounded = IsGrounded(camera.Position)
-
-	if CheckHorizontalCollision(camera.Position) != last {
-		last = CheckHorizontalCollision(camera.Position)
-		fmt.Print(last)
-	}
 
 	if grounded {
 		// If we are grounded and moving downwards, stop falling
@@ -131,6 +101,81 @@ func HandleMovement(camera *rl.Camera3D) {
 		// Snap camera perfectly so you don't jitter or sink
 		camera.Position.Y = topOfFloor + eyeOffset
 	}
+
+	//
+	//
+
+	forwardX := camera.Target.X - camera.Position.X
+	forwardZ := camera.Target.Z - camera.Position.Z
+
+	// Normalize forward vector so diagonal movement isn't faster
+	mag := float32(math.Sqrt(float64(forwardX*forwardX + forwardZ*forwardZ)))
+	if mag > 0 {
+		forwardX /= mag
+		forwardZ /= mag
+	}
+
+	// Right vector is perpendicular to the forward vector
+	rightX := -forwardZ
+	rightZ := forwardX
+
+	// 3. Accumulate Keyboard Input
+	var moveDirX, moveDirZ float32
+	if rl.IsKeyDown(rl.KeyW) {
+		moveDirX += forwardX
+		moveDirZ += forwardZ
+	}
+	if rl.IsKeyDown(rl.KeyS) {
+		moveDirX -= forwardX
+		moveDirZ -= forwardZ
+	}
+	if rl.IsKeyDown(rl.KeyD) {
+		moveDirX += rightX
+		moveDirZ += rightZ
+	}
+	if rl.IsKeyDown(rl.KeyA) {
+		moveDirX -= rightX
+		moveDirZ -= rightZ
+	}
+
+	// 4. Test and Apply Movement (with Frame Rate Independence)
+	moveX := moveDirX * speed * deltaTime
+	moveZ := moveDirZ * speed * deltaTime
+
+	// Slide on X Axis
+	if moveX != 0 {
+		testPos := camera.Position
+		testPos.X += moveX
+		if !CheckHorizontalCollision(testPos) {
+			camera.Position.X += moveX
+			camera.Target.X += moveX
+		}
+	}
+
+	// Slide on Z Axis
+	if moveZ != 0 {
+		testPos := camera.Position
+		testPos.Z += moveZ
+		if !CheckHorizontalCollision(testPos) {
+			camera.Position.Z += moveZ
+			camera.Target.Z += moveZ
+		}
+	}
+
+	// Keyboard movement (X and Z axis)
+	/*if rl.IsKeyDown(rl.KeyW) {
+		rl.CameraMoveForward(camera, 0.09, 1)
+	}
+	if rl.IsKeyDown(rl.KeyA) {
+		rl.CameraMoveRight(camera, -0.09, 1)
+	}
+	if rl.IsKeyDown(rl.KeyS) {
+		rl.CameraMoveForward(camera, -0.09, 1)
+	}
+	if rl.IsKeyDown(rl.KeyD) {
+		rl.CameraMoveRight(camera, 0.09, 1)
+	}*/
+
 }
 
 func IsGrounded(camPos rl.Vector3) bool {
@@ -149,7 +194,7 @@ func IsGrounded(camPos rl.Vector3) bool {
 	// Check all blocks underneath the player's horizontal bounding box footprint
 	for x := minX; x <= maxX; x++ {
 		for z := minZ; z <= maxZ; z++ {
-			if world.GetGlobalBlock(x, gridY, z) != 0 {
+			if world.GetGlobalBlock(x, gridY, z) >= 2 {
 				return true
 			}
 		}
@@ -162,18 +207,20 @@ func CheckHorizontalCollision(camPos rl.Vector3) bool {
 	bbox := GetPlayerBoundingBox(camPos)
 
 	// Get integer block ranges that the player overlaps
-	minX := blockCoord(bbox.Min.X)
-	maxX := blockCoord(bbox.Max.X)
+	offset := float32(0.25)
+
+	minX := blockCoord(bbox.Min.X + offset)
+	maxX := blockCoord(bbox.Max.X + offset)
 	minY := blockCoord(bbox.Min.Y + 0.5) // Slight offset so we don't catch the floor
 	maxY := blockCoord(bbox.Max.Y - 0.5) // Slight offset so we don't catch the ceiling
-	minZ := blockCoord(bbox.Min.Z)
-	maxZ := blockCoord(bbox.Max.Z)
+	minZ := blockCoord(bbox.Min.Z + offset + 0.5)
+	maxZ := blockCoord(bbox.Max.Z + offset + 0.5)
 
 	// Loop through all blocks in the player's current vertical and horizontal space
 	for y := minY; y <= maxY; y++ {
 		for x := minX; x <= maxX; x++ {
 			for z := minZ; z <= maxZ; z++ {
-				if world.GetGlobalBlock(x, y, z) != 0 {
+				if world.GetGlobalBlock(x, y, z) >= 2 {
 					return true // Collision detected!
 				}
 			}
