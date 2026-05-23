@@ -1,5 +1,7 @@
 package voda
 
+import "math/rand"
+
 func MalaErekcina(potok Potok, velike *[]VelikaReka) *MalaReka {
 	reka := &MalaReka{}
 	if len(potok.deo) == 0 {
@@ -7,7 +9,8 @@ func MalaErekcina(potok Potok, velike *[]VelikaReka) *MalaReka {
 	}
 	trenutna := potok.deo[len(potok.deo)-1].end
 	for i := 0; i < 1000; i++ {
-		sledeca := Cord{x: trenutna.x + 1, y: trenutna.y, z: trenutna.z}
+		pomakY := rand.Intn(3) - 1
+		sledeca := Cord{x: trenutna.x + 1, y: trenutna.y + pomakY, z: trenutna.z}
 		deo := Deo{start: trenutna, end: sledeca}
 		reka.Add(&deo)
 		for _, velika := range *velike {
