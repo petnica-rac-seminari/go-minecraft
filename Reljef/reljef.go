@@ -9,8 +9,6 @@ import (
 	"github.com/KEINOS/go-noise"
 )
 
-const seed = 100
-
 const chunkSize = 16
 const viewChunks = 10
 
@@ -47,7 +45,6 @@ func assignValues(n noise.Generator, br_oct, startX, startZ int, sm_mod float64)
 
 	for x := 0; x < 16; x++ {
 		for z := 0; z < 16; z++ {
-
 			worldX := startX + x
 			worldZ := startZ + z
 
@@ -61,18 +58,18 @@ func assignValues(n noise.Generator, br_oct, startX, startZ int, sm_mod float64)
 	return values
 }
 
-func newNoise(seedMod, br_oct, startX, startZ int, sm_mod float64) []float64 {
-	n, _ := noise.New(noise.OpenSimplex, int64(seed+seedMod))
+func newNoise(worldSeed, seedMod, br_oct, startX, startZ int, sm_mod float64) []float64 {
+	n, _ := noise.New(noise.OpenSimplex, int64(worldSeed+seedMod))
 	return assignValues(n, br_oct, startX, startZ, sm_mod)
 }
 
-func DetermineTrees(startX, startZ int) [][]float64 {
+func DetermineTrees(startX, startZ, seed int) [][]float64 {
 	coords := make([][]float64, 16)
 	for x := 0; x < 16; x++ {
 		coords[x] = make([]float64, 16)
 	}
 
-	values := newNoise(2, 2, startX, startZ, 1)
+	values := newNoise(seed, 2, 2, startX, startZ, 1)
 
 	for x := 0; x < 16; x++ {
 		for z := 0; z < 16; z++ {
@@ -95,14 +92,14 @@ func DetermineTrees(startX, startZ int) [][]float64 {
 	return coords
 }
 
-func BiomeMap(startX, startZ int) [][]int {
+func BiomeMap(startX, startZ, seed int) [][]int {
 	biomes := make([][]int, 16)
 
 	for x := 0; x < 16; x++ {
 		biomes[x] = make([]int, 16)
 	}
 
-	values := newNoise(2, 0, startX, startZ, 10)
+	values := newNoise(seed, 2, 0, startX, startZ, 10)
 
 	for x := 0; x < 16; x++ {
 		for z := 0; z < 16; z++ {
@@ -197,8 +194,8 @@ func treeChecker(x, z int, gen_structs [][]bool) bool {
 
 func GenerateOW(startX, startZ, seed int) world.Chunk {
 	chunk := make([][][]blocks.Block, 16)
-	det_trees := DetermineTrees(startX, startZ)
-	biome_map := BiomeMap(startX, startZ)
+	det_trees := DetermineTrees(startX, startZ, seed)
+	biome_map := BiomeMap(startX, startZ, seed)
 	gen_structs := make([][]bool, 16)
 	for i := range gen_structs {
 		gen_structs[i] = make([]bool, 16)
@@ -211,9 +208,9 @@ func GenerateOW(startX, startZ, seed int) world.Chunk {
 		}
 	}
 
-	values := newNoise(0, 1, startX, startZ, 1)
-	values1 := newNoise(1, 7, startX, startZ, 1)
-	BiomeMap(startX, startZ)
+	values := newNoise(seed, 0, 1, startX, startZ, 1)
+	values1 := newNoise(seed, 1, 7, startX, startZ, 1)
+	BiomeMap(startX, startZ, seed)
 
 	for x := 0; x < 16; x++ {
 		for z := 0; z < 16; z++ {
@@ -278,7 +275,7 @@ func GenerateOW(startX, startZ, seed int) world.Chunk {
 		}
 	}
 
-	return world.Chunk{startX / 16, startZ / 16, chunk, false, nil, false}
+	return world.Chunk{GlobalX: startX / 16, GlobalZ: startZ / 16, Blocks: chunk, Rendered: false, IsDirty: false}
 }
 
 func GenerateNether(startX, startZ, seed int) world.Chunk {
@@ -290,8 +287,9 @@ func GenerateNether(startX, startZ, seed int) world.Chunk {
 		}
 	}
 
-	values := newNoise(0, 1, startX, startZ, 0.25)
-	values1 := newNoise(1, 7, startX, startZ, 0.25)
+	values := newNoise(seed, 0, 1, startX, startZ, 0.25)
+	values1 := newNoise(seed, 1, 7, startX, startZ, 0.25)
+	BiomeMap(startX, startZ, seed)
 
 	for x := 0; x < 16; x++ {
 		for z := 0; z < 16; z++ {

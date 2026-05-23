@@ -1,6 +1,7 @@
 package menu
 
 import (
+	"main/blocks"
 	"os"
 	"strconv"
 
@@ -133,5 +134,50 @@ func Crtaj() {
 	if rl.IsKeyPressed(rl.KeyEnter) {
 		IsMenu = false
 		rl.DisableCursor()
+	}
+}
+
+func CrtajHotbar(aktivniBlok blocks.Block) {
+	sirinaEkrana := float32(rl.GetScreenWidth())
+	visinaEkrana := float32(rl.GetScreenHeight())
+
+	slotovi := [5]blocks.Block{blocks.Grass, blocks.Dirt, blocks.Stone, blocks.Water, blocks.Snow}
+	imena := [5]string{"GRASS", "DIRT", "STONE", "WATER", "SNOW"}
+	tasteri := [5]string{"1", "2", "3", "4", "5"}
+
+	velicinaSlota := float32(70)
+	razmak := float32(10)
+	ukupnaSirina := (velicinaSlota * 5) + (razmak * 4)
+
+	startX := (sirinaEkrana - ukupnaSirina) / 2
+	startY := visinaEkrana - velicinaSlota - 25
+
+	for i := 0; i < 5; i++ {
+		rect := rl.NewRectangle(startX+float32(i)*(velicinaSlota+razmak), startY, velicinaSlota, velicinaSlota)
+
+		bojaPozadine := rl.Fade(rl.DarkGray, 0.7)
+		bojaOkvira := rl.Gray
+		var debljinaOkvira float32 = 2
+
+		if slotovi[i] == aktivniBlok {
+			bojaPozadine = rl.Fade(rl.LightGray, 0.8)
+			bojaOkvira = rl.Gold
+			debljinaOkvira = 4
+		}
+
+		rl.DrawRectangleRec(rect, bojaPozadine)
+		rl.DrawRectangleLinesEx(rect, debljinaOkvira, bojaOkvira)
+
+		rl.DrawText(tasteri[i], int32(rect.X)+6, int32(rect.Y)+6, 12, rl.White)
+
+		sirinaTeksta := rl.MeasureText(imena[i], 12)
+		visinaTeksta := int32(12)
+		rl.DrawText(
+			imena[i],
+			int32(rect.X)+(int32(velicinaSlota)-sirinaTeksta)/2,
+			int32(rect.Y)+(int32(velicinaSlota)-visinaTeksta)/2,
+			12,
+			rl.Black,
+		)
 	}
 }
