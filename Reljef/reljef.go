@@ -2,11 +2,14 @@ package reljef
 
 import (
 	"main/blocks"
+	"main/menu"
 	"main/world"
+	"math"
 
 	"math/rand"
 
 	"github.com/KEINOS/go-noise"
+	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 const chunkSize = 16
@@ -165,6 +168,8 @@ func GeneratePortal(x, y, z int, chunk [][][]blocks.Block, dim bool) {
 				} else {
 					chunk[nx][y+dy][z] = blocks.Netherrack
 				}
+			} else if dy == 0 {
+				chunk[nx][y+dy][z] = blocks.Portal
 			} else {
 				chunk[nx][y+dy][z] = blocks.Bedrock
 			}
@@ -335,4 +340,52 @@ func GenerateNether(startX, startZ, seed int) world.Chunk {
 	}
 
 	return world.Chunk{startX / 16, startZ / 16, chunk, false, nil, false}
+}
+
+func DimensionSwap(dim bool, halfDist int, playerCX, playerCZ int, camera rl.Camera3D) {
+	world.LoadedChunks = make(map[world.ChunkPos]*world.Chunk)
+	dim = !dim
+	for z := -halfDist; z <= halfDist; z++ {
+		for x := -halfDist; x <= halfDist; x++ {
+			pos := world.ChunkPos{X: playerCX + x, Z: playerCZ + z}
+
+			if _, exists := world.LoadedChunks[pos]; !exists {
+				if dim {
+					c := GenerateOW(pos.X*16, pos.Z*16, menu.Seed)
+					world.LoadedChunks[pos] = &c
+				} else {
+					c := GenerateNether(pos.X*16, pos.Z*16, menu.Seed)
+					world.LoadedChunks[pos] = &c
+				}
+			}
+		}
+	}
+
+	pos := world.ChunkPos{X: playerCX, Z: playerCZ}
+	playerX := (int(math.Abs(float64(camera.Position.X))) % 16)
+	playerZ := (int(math.Abs(float64(camera.Position.Z))) % 16)
+	playerY := int(camera.Position.Y - 1)
+	camera.Position.Y += 5
+
+	if playerX > 13 {
+		if playerZ > 13 {
+			GeneratePortal(playerX-4, playerY-2, playerZ-4, world.LoadedChunks[pos].Blocks, dim)
+		} else if playerZ < 3 {
+			GeneratePortal(playerX-4, playerY-2, playerZ+4, world.LoadedChunks[pos].Blocks, dim)
+		} else {
+			GeneratePortal(playerX-4, playerY-2, playerZ, world.LoadedChunks[pos].Blocks, dim)
+		}
+	} else if playerX < 3 {
+		if playerZ > 13 {
+			GeneratePortal(playerX+4, playerY-2, playerZ-4, world.LoadedChunks[pos].Blocks, dim)
+		} else if playerZ < 3 {
+			GeneratePortal(playerX+4, playerY-2, playerZ+4, world.LoadedChunks[pos].Blocks, dim)
+		} else {
+			GeneratePortal(playerX+4, playerY-2, playerZ, world.LoadedChunks[pos].Blocks, dim)
+		}
+	} else {
+		GeneratePortal(playerX, playerY-2, playerZ, world.LoadedChunks[pos].Blocks, dim)
+	}
+
+	camera.Position.Y += 5
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math"
 	"math/rand"
 
@@ -18,7 +19,7 @@ const render_dist = 5
 
 func main() {
 	rl.SetConfigFlags(rl.FlagWindowResizable)
-	rl.InitWindow(1600, 900, "Raylib Go - 3D Kocka i Skakanje")
+	rl.InitWindow(1920, 1080, "Raylib Go - 3D Kocka i Skakanje")
 	defer rl.CloseWindow()
 
 	// Muzika
@@ -48,6 +49,7 @@ func main() {
 	var clouds []oblaci.CLOUDS = oblaci.GenerateClouds()
 	sunce_model := nebo.RenderSun()
 	var dim bool = true
+	var portalTimer int = 0
 
 	for !rl.WindowShouldClose() {
 		currentTick += rl.GetFrameTime()
@@ -80,55 +82,7 @@ func main() {
 			}
 
 			// SKLADIŠTIMO TASTER U PROMENLJIVU DA GA NE BISMO PROGUTALI!
-			trenutniTaster := rl.GetKeyPressed()
-
-			if trenutniTaster == rl.KeyG {
-				camera.Position.Y += 5
-				world.LoadedChunks = make(map[world.ChunkPos]*world.Chunk)
-				dim = !dim
-				for z := -halfDist; z <= halfDist; z++ {
-					for x := -halfDist; x <= halfDist; x++ {
-						pos := world.ChunkPos{X: playerCX + x, Z: playerCZ + z}
-
-						if _, exists := world.LoadedChunks[pos]; !exists {
-							if dim {
-								c := reljef.GenerateOW(pos.X*16, pos.Z*16, menu.Seed)
-								world.LoadedChunks[pos] = &c
-							} else {
-								c := reljef.GenerateNether(pos.X*16, pos.Z*16, menu.Seed)
-								world.LoadedChunks[pos] = &c
-							}
-						}
-					}
-				}
-
-				pos := world.ChunkPos{X: playerCX, Z: playerCZ}
-				playerX := (int(math.Abs(float64(camera.Position.X))) % 16)
-				playerZ := (int(math.Abs(float64(camera.Position.Z))) % 16)
-				playerY := int(camera.Position.Y)
-
-				if playerX > 13 {
-					if playerZ > 13 {
-						reljef.GeneratePortal(playerX-4, playerY, playerZ-4, world.LoadedChunks[pos].Blocks, dim)
-					} else if playerZ < 3 {
-						reljef.GeneratePortal(playerX-4, playerY, playerZ+4, world.LoadedChunks[pos].Blocks, dim)
-					} else {
-						reljef.GeneratePortal(playerX-4, playerY, playerZ, world.LoadedChunks[pos].Blocks, dim)
-					}
-				} else if playerX < 3 {
-					if playerZ > 13 {
-						reljef.GeneratePortal(playerX+4, playerY, playerZ-4, world.LoadedChunks[pos].Blocks, dim)
-					} else if playerZ < 3 {
-						reljef.GeneratePortal(playerX+4, playerY, playerZ+4, world.LoadedChunks[pos].Blocks, dim)
-					} else {
-						reljef.GeneratePortal(playerX+4, playerY, playerZ, world.LoadedChunks[pos].Blocks, dim)
-					}
-				} else {
-					reljef.GeneratePortal(playerX, playerY, playerZ, world.LoadedChunks[pos].Blocks, dim)
-				}
-
-				camera.Position.Y += 5
-			}
+			//trenutniTaster := rl.GetKeyPressed()
 
 			oblaci.MoveClouds(clouds, camera.Position.Y)
 
@@ -160,6 +114,19 @@ func main() {
 			oblaci.DrawClouds(clouds, rl.Vector3{camera.Position.X, camera.Position.Y, camera.Position.Z})
 
 			rl.DrawModel(*sunce_model, nebo.MoveSun(float64(nebo.SkyBodyAngle(currentTick)), camera), 1.0, rl.White)
+
+			if world.GetGlobalBlock(int(camera.Position.X), int(camera.Position.Y-2), int(camera.Position.Z)) == 13 {
+				portalTimer++
+				fmt.Printf("%v ", portalTimer)
+			} else {
+				portalTimer = 0
+			}
+
+			if portalTimer == 120 {
+				reljef.DimensionSwap(dim, halfDist, playerCX, playerCZ, camera)
+				dim = !dim
+				portalTimer = 0
+			}
 
 			rl.EndMode3D()
 

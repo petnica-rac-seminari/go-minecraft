@@ -76,6 +76,7 @@ func BlockModelRegistry() *BlockRegistry {
 		BlockModelRegistryInstance.RegisterNewModel(blocks.Snow, cubeMesh, "assets/snow.png")
 		BlockModelRegistryInstance.RegisterNewModel(blocks.Sudomil_bot, cubeMesh, "assets/sudomil_bottom.png")
 		BlockModelRegistryInstance.RegisterNewModel(blocks.Sudomil_top, cubeMesh, "assets/sudomil_top.png")
+		BlockModelRegistryInstance.RegisterNewModel(blocks.Portal, cubeMesh, "assets/bedrock.png")
 	}
 	return BlockModelRegistryInstance
 }

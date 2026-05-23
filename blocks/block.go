@@ -16,4 +16,5 @@ const (
 	Sudomil_bot
 	Sudomil_top
 	Bedrock
+	Portal
 )
