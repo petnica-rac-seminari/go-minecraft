@@ -141,18 +141,18 @@ func CrtajHotbar(aktivniBlok blocks.Block) {
 	sirinaEkrana := float32(rl.GetScreenWidth())
 	visinaEkrana := float32(rl.GetScreenHeight())
 
-	slotovi := [5]blocks.Block{blocks.Grass, blocks.Dirt, blocks.Stone, blocks.Water, blocks.Snow}
-	imena := [5]string{"GRASS", "DIRT", "STONE", "WATER", "SNOW"}
-	tasteri := [5]string{"1", "2", "3", "4", "5"}
+	slotovi := [9]blocks.Block{1, 2, 3, 4, 5, 6, 7, 8, 9}
+	imena := [9]string{"Water", "Grass", "Dirt", "Stone", "Snow", "Log", "Leaves", "Niggerrack", "Sand"}
+	tasteri := [9]string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}
 
 	velicinaSlota := float32(70)
 	razmak := float32(10)
-	ukupnaSirina := (velicinaSlota * 5) + (razmak * 4)
+	ukupnaSirina := (velicinaSlota * 9) + (razmak * 4)
 
 	startX := (sirinaEkrana - ukupnaSirina) / 2
 	startY := visinaEkrana - velicinaSlota - 25
 
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 9; i++ {
 		rect := rl.NewRectangle(startX+float32(i)*(velicinaSlota+razmak), startY, velicinaSlota, velicinaSlota)
 
 		bojaPozadine := rl.Fade(rl.DarkGray, 0.7)
