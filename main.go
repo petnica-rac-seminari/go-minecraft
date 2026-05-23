@@ -14,11 +14,11 @@ import (
 	"main/world"
 )
 
-const render_dist = 3
+const render_dist = 8
 
 func main() {
-	const windowX = 1920
-	const windowY = 1080
+	const windowX = 1600
+	const windowY = 900
 
 	const buttonHeight = 100
 	const buttonWidth = 300
@@ -47,7 +47,6 @@ func main() {
 	var jumpCtrl navigation.JumpInput
 	const eyeHeight = navigation.DefaultEyeHeight
 	var isMenu = true
-
 	defer rl.CloseWindow()
 
 	for !rl.WindowShouldClose() {
@@ -151,7 +150,7 @@ func main() {
 				for x := -halfDist; x <= halfDist; x++ {
 					pos := world.ChunkPos{X: playerCX + x, Z: playerCZ + z}
 					if chunk, exists := world.LoadedChunks[pos]; exists {
-						world.RenderChunk(*chunk)
+						world.RenderChunk(chunk)
 					}
 				}
 			}
