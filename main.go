@@ -3,35 +3,39 @@ package main
 import (
 	"fmt"
 	"math"
+	"math/rand"
 
 	reljef "main/Reljef"
-	nav "main/navigation"
-	"main/oblaci"
-
+	"main/blocks"
 	nebo "main/dayNightCycle"
+	"main/menu"
+	"main/navigation"
+	"main/oblaci"
+	"main/world"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
-
-	//"main/blocks"
-	//"main/navigation"
-	"main/world"
 )
 
 const render_dist = 3
 
 func main() {
 	rl.SetConfigFlags(rl.FlagWindowResizable)
-	rl.InitWindow(1600, 900, "Raylib Go - 3D Kocka i Skakanje")
+	rl.InitWindow(1920, 1080, "Raylib Go - 3D Kocka i Skakanje")
 	defer rl.CloseWindow()
+
+	menu.UcitajMenuSliku()
+	defer menu.UnloadujMenuSliku()
 
 	camera := rl.Camera3D{}
 	camera.Position = rl.NewVector3(4.0, 40.0, 4.0)
 	camera.Target = rl.NewVector3(0.0, 1.0, 0.0)
 	camera.Up = rl.NewVector3(0.0, 1.0, 0.0)
-	camera.Fovy = 60.0
+	camera.Fovy = 90.0
 	camera.Projection = rl.CameraPerspective
-	rl.DisableCursor()
+	rl.EnableCursor()
 	rl.SetTargetFPS(60)
+	rng := rand.New(rand.NewSource(int64(menu.Seed)))
+	_ = rng
 
 	var verticalVelocity float32 = 0.0
 	const gravity float32 = -26.0
@@ -41,8 +45,10 @@ func main() {
 
 	const maxReach = navigation.DefaultMaxReach
 	var lastHit navigation.RaycastHit
-	var current_tick float32 = 0
+	var currentTick float32 = 0
 	var clouds []oblaci.CLOUDS = oblaci.GenerateClouds()
+	sunce_model := nebo.RenderSun()
+	var dim bool = true
 
 	var jumpCtrl navigation.JumpInput
 	const eyeHeight = navigation.DefaultEyeHeight
@@ -50,102 +56,177 @@ func main() {
 	sunce_model := nebo.RenderSun()
 
 	for !rl.WindowShouldClose() {
-		current_tick += rl.GetFrameTime()
-		rl.UpdateCamera(&camera, rl.CameraFirstPerson)
+		currentTick += rl.GetFrameTime()
 
-		playerCX := int(math.Floor(float64(camera.Position.X) / 16.0))
-		playerCZ := int(math.Floor(float64(camera.Position.Z) / 16.0))
+		if !menu.IsMenu {
+			rl.UpdateCamera(&camera, rl.CameraFirstPerson)
 
-		halfDist := render_dist / 2
-		for z := -halfDist; z <= halfDist; z++ {
-			for x := -halfDist; x <= halfDist; x++ {
-				pos := world.ChunkPos{X: playerCX + x, Z: playerCZ + z}
+			playerCX := int(math.Floor(float64(camera.Position.X) / 16.0))
+			playerCZ := int(math.Floor(float64(camera.Position.Z) / 16.0))
 
-				if _, exists := world.LoadedChunks[pos]; !exists {
-					c := reljef.GenerateChunk(pos.X*16, pos.Z*16)
-					world.LoadedChunks[pos] = &c
+			halfDist := render_dist / 2
+			for z := -halfDist; z <= halfDist; z++ {
+				for x := -halfDist; x <= halfDist; x++ {
+					pos := world.ChunkPos{X: playerCX + x, Z: playerCZ + z}
+
+					if _, exists := world.LoadedChunks[pos]; !exists {
+						if dim {
+							c := reljef.GenerateOW(pos.X*16, pos.Z*16, menu.Seed)
+							world.LoadedChunks[pos] = &c
+						} else {
+							c := reljef.GenerateNether(pos.X*16, pos.Z*16, menu.Seed)
+							world.LoadedChunks[pos] = &c
+						}
+					}
 				}
 			}
+
+			// SKLADIŠTIMO TASTER U PROMENLJIVU DA GA NE BISMO PROGUTALI!
+			trenutniTaster := rl.GetKeyPressed()
+
+			if trenutniTaster == rl.KeyG {
+				camera.Position.Y += 5
+				world.LoadedChunks = make(map[world.ChunkPos]*world.Chunk)
+				dim = !dim
+				for z := -halfDist; z <= halfDist; z++ {
+					for x := -halfDist; x <= halfDist; x++ {
+						pos := world.ChunkPos{X: playerCX + x, Z: playerCZ + z}
+
+						if _, exists := world.LoadedChunks[pos]; !exists {
+							if dim {
+								c := reljef.GenerateOW(pos.X*16, pos.Z*16, menu.Seed)
+								world.LoadedChunks[pos] = &c
+							} else {
+								c := reljef.GenerateNether(pos.X*16, pos.Z*16, menu.Seed)
+								world.LoadedChunks[pos] = &c
+							}
+						}
+					}
+				}
+
+				pos := world.ChunkPos{X: playerCX, Z: playerCZ}
+				playerX := (int(math.Abs(float64(camera.Position.X))) % 16)
+				playerZ := (int(math.Abs(float64(camera.Position.Z))) % 16)
+				playerY := int(camera.Position.Y)
+
+				if playerX > 13 {
+					if playerZ > 13 {
+						reljef.GeneratePortal(playerX-4, playerY, playerZ-4, world.LoadedChunks[pos].Blocks, dim)
+					} else if playerZ < 3 {
+						reljef.GeneratePortal(playerX-4, playerY, playerZ+4, world.LoadedChunks[pos].Blocks, dim)
+					} else {
+						reljef.GeneratePortal(playerX-4, playerY, playerZ, world.LoadedChunks[pos].Blocks, dim)
+					}
+				} else if playerX < 3 {
+					if playerZ > 13 {
+						reljef.GeneratePortal(playerX+4, playerY, playerZ-4, world.LoadedChunks[pos].Blocks, dim)
+					} else if playerZ < 3 {
+						reljef.GeneratePortal(playerX+4, playerY, playerZ+4, world.LoadedChunks[pos].Blocks, dim)
+					} else {
+						reljef.GeneratePortal(playerX+4, playerY, playerZ, world.LoadedChunks[pos].Blocks, dim)
+					}
+				} else {
+					reljef.GeneratePortal(playerX, playerY, playerZ, world.LoadedChunks[pos].Blocks, dim)
+				}
+
+				camera.Position.Y += 5
+			}
+
+			navigation.ApplyHorizontalCollision(&camera, eyeHeight, navigation.PlayerHalfWidth)
+
+			dir := navigation.CameraDirection(camera)
+			hit := navigation.Raycast(camera.Position, dir, maxReach)
+			lastHit = hit
+
+			// Sada switch koristi istu promenljivu i promena radi savršeno
+			switch trenutniTaster {
+			case rl.KeyOne:
+				BlockToPlace = blocks.Grass
+			case rl.KeyTwo:
+				BlockToPlace = blocks.Dirt
+			case rl.KeyThree:
+				BlockToPlace = blocks.Stone
+			case rl.KeyFour:
+				BlockToPlace = blocks.Water
+			case rl.KeyFive:
+				BlockToPlace = blocks.Snow
+			}
+
+			if rl.IsMouseButtonPressed(rl.MouseButtonLeft) && hit.Hit {
+				navigation.DestroyBlock(hit.X, hit.Y, hit.Z)
+			}
+			if rl.IsMouseButtonPressed(rl.MouseButtonRight) && hit.Hit {
+				navigation.PlaceAdjacent(hit, BlockToPlace)
+			}
+
+			if rl.IsKeyPressed(rl.KeySpace) && isGrounded {
+				verticalVelocity = jumpForce
+				isGrounded = false
+			}
+
+			if navigation.IsAirborne(camera.Position, eyeHeight, navigation.PlayerHalfWidth) {
+				isGrounded = false
+			}
+
+			canJump := isGrounded && !navigation.IsAirborne(camera.Position, eyeHeight, navigation.PlayerHalfWidth)
+			if navigation.TryDoubleTapJump(&jumpCtrl, rl.GetTime(), rl.IsKeyPressed(rl.KeySpace), canJump) {
+				verticalVelocity = jumpForce
+				isGrounded = false
+			}
+
+			if !isGrounded {
+				verticalVelocity += gravity * rl.GetFrameTime()
+				camera.Position.Y += verticalVelocity * rl.GetFrameTime()
+				camera.Target.Y += verticalVelocity * rl.GetFrameTime()
+			}
+
+			navigation.ApplyVerticalBlockPhysics(&camera, &verticalVelocity, &isGrounded, eyeHeight)
+
+			oblaci.MoveClouds(clouds, camera.Position.Y)
 		}
-
-		navigation.ApplyHorizontalCollision(&camera, eyeHeight, navigation.PlayerHalfWidth)
-
-		dir := navigation.CameraDirection(camera)
-		hit := navigation.Raycast(camera.Position, dir, maxReach)
-		lastHit = hit
-
-		switch rl.GetKeyPressed() {
-		case rl.KeyOne:
-			BlockToPlace = blocks.Grass
-		case rl.KeyTwo:
-			BlockToPlace = blocks.Dirt
-		case rl.KeyThree:
-			BlockToPlace = blocks.Stone
-		case rl.KeyFour:
-			BlockToPlace = blocks.Water
-		case rl.KeyFive:
-			BlockToPlace = blocks.Snow
-		}
-
-		if rl.IsMouseButtonPressed(rl.MouseButtonLeft) && hit.Hit {
-			navigation.DestroyBlock(hit.X, hit.Y, hit.Z)
-		}
-		if rl.IsMouseButtonPressed(rl.MouseButtonRight) && hit.Hit {
-			navigation.PlaceAdjacent(hit, BlockToPlace)
-		}
-
-		if rl.IsKeyPressed(rl.KeySpace) && isGrounded {
-			verticalVelocity = jumpForce
-			isGrounded = false
-		}
-
-		if navigation.IsAirborne(camera.Position, eyeHeight, navigation.PlayerHalfWidth) {
-			isGrounded = false
-		}
-
-		canJump := isGrounded && !navigation.IsAirborne(camera.Position, eyeHeight, navigation.PlayerHalfWidth)
-		if navigation.TryDoubleTapJump(&jumpCtrl, rl.GetTime(), rl.IsKeyPressed(rl.KeySpace), canJump) {
-			verticalVelocity = jumpForce
-			isGrounded = false
-		}
-
-		if !isGrounded {
-			verticalVelocity += gravity * rl.GetFrameTime()
-			camera.Position.Y += verticalVelocity * rl.GetFrameTime()
-			camera.Target.Y += verticalVelocity * rl.GetFrameTime()
-		}
-
-		oblaci.MoveClouds(clouds)
-
-		navigation.ApplyVerticalBlockPhysics(&camera, &verticalVelocity, &isGrounded, eyeHeight)
 
 		rl.BeginDrawing()
-		rl.ClearBackground(nebo.SkyColor(int(current_tick)))
 
-		rl.BeginMode3D(camera)
+		if !menu.IsMenu {
+			rl.DisableCursor()
+			rl.ClearBackground(nebo.SkyColor(int(currentTick), dim))
+			rl.BeginMode3D(camera)
 
-		for z := -halfDist; z <= halfDist; z++ {
-			for x := -halfDist; x <= halfDist; x++ {
-				pos := world.ChunkPos{X: playerCX + x, Z: playerCZ + z}
-				if chunk, exists := world.LoadedChunks[pos]; exists {
-					world.RenderChunk(*chunk)
+			playerCX := int(math.Floor(float64(camera.Position.X) / 16.0))
+			playerCZ := int(math.Floor(float64(camera.Position.Z) / 16.0))
+
+			halfDist := render_dist / 2
+			for z := -halfDist; z <= halfDist; z++ {
+				for x := -halfDist; x <= halfDist; x++ {
+					pos := world.ChunkPos{X: playerCX + x, Z: playerCZ + z}
+					if chunk, exists := world.LoadedChunks[pos]; exists {
+						world.RenderChunk(chunk)
+					}
+					if structure, exists := world.LoadedStructures[pos]; exists {
+						world.RenderChunk(structure)
+					}
 				}
 			}
+
+			oblaci.DrawClouds(clouds, rl.Vector3{camera.Position.X, camera.Position.Y, camera.Position.Z})
+			if lastHit.Hit {
+				navigation.DrawBlockOutline(lastHit.X, lastHit.Y, lastHit.Z, rl.Yellow)
+			}
+
+			rl.DrawModel(*sunce_model, nebo.MoveSun(float64(nebo.SkyBodyAngle(currentTick)), camera), 1.0, rl.White)
+
+			rl.EndMode3D()
+
+			rl.DrawFPS(10, 10)
+			rl.DrawText("WASD - Kretanje | Mis - Okretanje | Space - Skok", 10, 40, 20, rl.DarkGray)
+			rl.DrawText("LMB - Unisti | RMB - Postavi blok", 10, 70, 20, rl.DarkGray)
+
+			// Hotbar crtanje
+			menu.CrtajHotbar(BlockToPlace)
+		} else {
+			rl.ClearBackground(rl.DarkGray)
+			menu.Crtaj()
 		}
-
-		oblaci.DrawClouds(clouds)
-		rl.DrawModel(*sunce_model, nebo.MoveSun(float64(nebo.SkyBodyAngle(current_tick)), camera), 1.0, rl.White)
-		if lastHit.Hit {
-			navigation.DrawBlockOutline(lastHit.X, lastHit.Y, lastHit.Z, rl.Yellow)
-		}
-
-		rl.EndMode3D()
-
-		rl.DrawFPS(10, 10)
-		rl.DrawText("WASD - Kretanje | Mis - Okretanje | Space - Skok", 10, 40, 20, rl.DarkGray)
-		rl.DrawText("LMB - Unisti | RMB - Postavi blok", 10, 70, 20, rl.DarkGray)
-		rl.DrawText("1 - Grass | 2 - Dirt | 3 - Stone | 4 - Water | 5 - Snow", 10, 550, 20, rl.Black)
-		rl.DrawCircle(int32(rl.GetScreenWidth())/2, int32(rl.GetScreenHeight())/2, 10, rl.White)
 
 		rl.EndDrawing()
 	}

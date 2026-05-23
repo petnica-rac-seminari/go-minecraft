@@ -2,10 +2,6 @@ package main
 
 import (
 	"fmt"
-	"image"
-	"image/color"
-	"image/png"
-	"os"
 
 	"github.com/KEINOS/go-noise"
 )
@@ -67,18 +63,17 @@ func newNoise(seedMod int, br_oct int, startX, startY int) []float64 {
 	return assignValues(n, br_oct, startX, startY)
 }
 
-func main() {
-
-	playerX := 0
-	playerZ := 0
+func HeightMap(playerX, playerZ, seed int) [][]int {
+	coords := make([][]int, viewChunks*16)
+	for i := range coords {
+		coords[i] = make([]int, viewChunks*16)
+	}
 
 	startX := playerX*chunkSize - (width / 2)
 	startZ := playerZ*chunkSize - (height / 2)
 
 	values := newNoise(0, 1, startX, startZ)
 	values1 := newNoise(1, 7, startX, startZ)
-
-	img := image.NewRGBA(image.Rect(0, 0, width, height))
 
 	for x := 0; x < width; x++ {
 		for z := 0; z < height; z++ {
@@ -91,25 +86,20 @@ func main() {
 
 			normf := int(norm+norm1) / 2
 
-			if normf >= 12 {
-				img.SetRGBA(x, z, color.RGBA{100, 100, 100, 255})
-			} else if normf < 12 && normf > 7 {
-				img.SetRGBA(x, z, color.RGBA{0, 180, 0, 255})
-			} else if normf <= 7 && normf >= 6 {
-				img.SetRGBA(x, z, color.RGBA{79, 64, 22, 255})
-			} else if normf < 6 {
-				img.SetRGBA(x, z, color.RGBA{0, 0, 180, 255})
-			}
-
+			coords[x][z] = normf
 		}
 	}
 
-	f, err := os.Create("bignoise.png")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	defer f.Close()
+	return coords
+}
 
-	png.Encode(f, img)
+func main() {
+	coords := HeightMap(0, 0, 100)
+
+	for x := 0; x < width; x++ {
+		for z := 0; z < height; z++ {
+			fmt.Printf("%v ", coords[x][z])
+		}
+		fmt.Println()
+	}
 }
