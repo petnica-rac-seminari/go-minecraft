@@ -1,5 +1,13 @@
 package voda
 
+const (
+	baseHeight int = 20 // Visina na kojoj potok postaje reka // file Potok.go
+)
+
+var (
+	worldReke Reke
+)
+
 type Cord struct {
 	x int
 	y int
