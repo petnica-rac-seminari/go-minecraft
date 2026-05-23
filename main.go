@@ -1,85 +1,158 @@
 package main
 
 import (
-	reljef "main/Reljef"
-	nebo "main/nebo"
+	"fmt"
+	"math"
 	"math/rand"
-	"time"
+
+	reljef "main/Reljef"
+	"main/menu"
+	"main/navigation"
+	nebo "main/nebo"
+	"main/world"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
-
-	//"main/blocks"
-	"main/world"
 )
 
+const render_dist = 5
+
 func main() {
-
-	rand.Seed(time.Now().UnixNano())
-
+	rl.SetConfigFlags(rl.FlagWindowResizable)
 	rl.InitWindow(1920, 1080, "Raylib Go - 3D Kocka i Skakanje")
 	defer rl.CloseWindow()
 
-	// startTime := time.Now()
+	// Muzika
+	rl.InitAudioDevice()
+	defer rl.CloseAudioDevice()
+
+	music := rl.LoadMusicStream("muzika\\We Are Charlie Kirk.mp3")
+	musicParacin := rl.LoadMusicStream("muzika\\MATADORA (Niggerized)Hard Bass Visualizer  Dark Phonk Remix.mp3")
+	blockDestroySound := rl.LoadSound("muzika\\roblox-explosion-sound.mp3")
+	blockPlaceSound := rl.LoadSound("muzika\\block place.mp3")
+	portalSound := rl.LoadSound("muzika\\Nether Portal.mp3")
+	rl.SetMusicVolume(musicParacin, 0.5)
+
+	defer rl.UnloadMusicStream(musicParacin)
+	defer rl.UnloadSound(blockDestroySound)
+	defer rl.UnloadSound(blockPlaceSound)
+	defer rl.UnloadSound(portalSound)
+
+	menu.UcitajMenuSliku()
+	defer menu.UnloadujMenuSliku()
 
 	camera := rl.Camera3D{}
-	camera.Position = rl.NewVector3(4.0, 10.0, 4.0)
+	camera.Position = rl.NewVector3(4.0, 160.0, 4.0)
 	camera.Target = rl.NewVector3(0.0, 1.0, 0.0)
 	camera.Up = rl.NewVector3(0.0, 1.0, 0.0)
-	camera.Fovy = 60.0
+	camera.Fovy = 90.0
 	camera.Projection = rl.CameraPerspective
-
-	rl.DisableCursor()
+	rl.EnableCursor()
 	rl.SetTargetFPS(60)
+	rng := rand.New(rand.NewSource(int64(menu.Seed)))
+	_ = rng
 
-	var verticalVelocity float32 = 0.0
-	const gravity float32 = -0.6
-	const jumpForce float32 = 0.15
-	const groundLevel float32 = 10.0
-	var isGrounded bool = true
 	var currentTick float32 = 0
-
-	generatedChunk := reljef.GenerateChunk(0, 0, 0.1, 8, 0, 1)
-
-	// fmt.Println(clouds)
+	var dim bool = true
+	var portalTimer int = 0
 
 	for !rl.WindowShouldClose() {
-		rl.UpdateCamera(&camera, rl.CameraFirstPerson)
-
 		currentTick += rl.GetFrameTime()
-		if rl.IsKeyPressed(rl.KeySpace) && isGrounded {
-			verticalVelocity = jumpForce
-			isGrounded = false
-		}
-
-		if !isGrounded {
-			verticalVelocity += gravity * rl.GetFrameTime()
-			camera.Position.Y += verticalVelocity
-			camera.Target.Y += verticalVelocity
-
-			if camera.Position.Y <= groundLevel {
-				diff := groundLevel - camera.Position.Y
-				camera.Position.Y = groundLevel
-				camera.Target.Y += diff
-				verticalVelocity = 0.0
-				isGrounded = true
+		rl.UpdateMusicStream(musicParacin)
+		if dim {
+			rl.StopMusicStream(musicParacin)
+			if rl.IsMusicStreamPlaying(music) == false {
+				rl.PlayMusicStream(music)
+			}
+		} else {
+			rl.StopMusicStream(music)
+			if rl.IsMusicStreamPlaying(musicParacin) == false {
+				rl.PlayMusicStream(musicParacin)
 			}
 		}
 
+		if !menu.IsMenu {
+
+			// Sound effects
+			if rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
+				rl.PlaySound(blockDestroySound)
+			} else if rl.IsMouseButtonPressed(rl.MouseButtonRight) {
+				rl.PlaySound(blockPlaceSound)
+			}
+			navigation.HandleBlockManipulation(&camera)
+			navigation.HandleMovement(&camera)
+			playerCX := int(math.Floor(float64(camera.Position.X) / 16.0))
+			playerCZ := int(math.Floor(float64(camera.Position.Z) / 16.0))
+
+			halfDist := render_dist / 2
+			for z := -halfDist; z <= halfDist; z++ {
+				for x := -halfDist; x <= halfDist; x++ {
+					pos := world.ChunkPos{X: playerCX + x, Z: playerCZ + z}
+
+					if _, exists := world.LoadedChunks[pos]; !exists {
+						if dim {
+							c := reljef.GenerateOW(pos.X*16, pos.Z*16, menu.Seed)
+							world.LoadedChunks[pos] = &c
+						} else {
+							c := reljef.GenerateNether(pos.X*16, pos.Z*16, menu.Seed)
+							world.LoadedChunks[pos] = &c
+						}
+					}
+				}
+			}
+
+		}
+
 		rl.BeginDrawing()
-		rl.ClearBackground(nebo.SkyColor(int64(currentTick)))
 
-		rl.BeginMode3D(camera)
+		if !menu.IsMenu {
+			rl.DisableCursor()
+			// rl.ClearBackground(nebo.SkyColor(int(currentTick), dim))
+			rl.BeginMode3D(camera)
 
-		nebo.HandleNebo(camera, currentTick)
+			playerCX := int(math.Floor(float64(camera.Position.X) / 16.0))
+			playerCZ := int(math.Floor(float64(camera.Position.Z) / 16.0))
 
-		// rl.DrawCube(rl.NewVector3(0.0, 1.0, 0.0), 2.0, 2.0, 2.0, rl.Blue)
-		// rl.DrawCubeWires(rl.NewVector3(0.0, 1.0, 0.0), 2.0, 2.0, 2.0, rl.DarkBlue)
-		world.RenderChunk(generatedChunk)
+			halfDist := render_dist / 2
+			for z := -halfDist; z <= halfDist; z++ {
+				for x := -halfDist; x <= halfDist; x++ {
+					pos := world.ChunkPos{X: playerCX + x, Z: playerCZ + z}
+					if chunk, exists := world.LoadedChunks[pos]; exists {
+						world.RenderChunk(chunk)
+					}
+					if structure, exists := world.LoadedStructures[pos]; exists {
+						world.RenderChunk(structure)
+					}
+				}
+			}
+			nebo.HandleNebo(camera, currentTick)
+			if world.GetGlobalBlock(int(camera.Position.X), int(camera.Position.Y-2), int(camera.Position.Z)) == 13 {
+				portalTimer++
+				fmt.Printf("%v ", portalTimer)
+			} else {
+				portalTimer = 0
+			}
 
-		// oblaci.DrawClouds()
-		rl.EndMode3D()
+			if portalTimer == 120 {
+				reljef.DimensionSwap(dim, halfDist, playerCX, playerCZ, camera)
+				rl.PlaySound(portalSound)
+				dim = !dim
+				portalTimer = 0
+			}
 
-		rl.DrawFPS(10, 10)
+			rl.EndMode3D()
+
+			rl.DrawFPS(10, 10)
+			rl.DrawText("WASD - Kretanje | Mis - Okretanje | Space - Skok", 10, 40, 20, rl.DarkGray)
+			rl.DrawText("LMB - Unisti | RMB - Postavi blok", 10, 70, 20, rl.DarkGray)
+
+			// Hotbar crtanje
+			menu.CrtajHotbar(navigation.SelectedBlock)
+
+		} else {
+			rl.ClearBackground(rl.DarkGray)
+			menu.Crtaj()
+		}
+
 		rl.EndDrawing()
 	}
 }
