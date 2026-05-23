@@ -11,8 +11,7 @@ const (
 )
 
 var (
-	WorldReke   Reke
-	listaIzvora map[Cord]bool
+	potoci []Potok
 )
 
 type Cord struct {
@@ -46,15 +45,11 @@ type VelikaReka struct {
 }
 
 type Potok struct {
-	deo     []Deo
-	pointer *Reke
+	deo []Deo
 }
 
 type Deo struct {
-	start   Cord
-	end     Cord
-	pointer DeoPointer
-	sirina  int
+	tacke []Cord
 }
 
 func NewDeo(x1 int, y1 int, z1 int, x2 int, y2 int, z2 int) Deo {

@@ -8,7 +8,7 @@ type OnlyXandZCord struct {
 }
 
 func ValidneCordinateZaIzvor(mapaZaIzvore map[int][]OnlyXandZCord) []OnlyXandZCord {
-	for i := minVisinaZaGenerisanjeIzvor; i <= World.hight-visinaOdVrhaSvetaZaIzvor; i++ {
+	for i := minVisinaZaGenerisanjeIzvor; i <= 64-visinaOdVrhaSvetaZaIzvor; i++ {
 		for _, j := range mapaZaIzvore[i] {
 			postoji := true
 			for l, _ := range listaIzvora { // funkcija math.Abc je jebeno sranje
@@ -17,7 +17,7 @@ func ValidneCordinateZaIzvor(mapaZaIzvore map[int][]OnlyXandZCord) []OnlyXandZCo
 				}
 			}
 			if postoji {
-				listaIzvora[Cord{x: j.x, y: i, z: j.z}] = false
+				NewPotok(Cord{x: j.x, z: j.z, y: i})
 			}
 		}
 	}
