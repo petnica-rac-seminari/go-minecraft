@@ -19,7 +19,7 @@ const render_dist = 4
 
 func main() {
 	rl.SetConfigFlags(rl.FlagWindowResizable)
-	rl.InitWindow(1920, 1080, "Raylib Go - 3D Kocka i Skakanje")
+	rl.InitWindow(1600, 900, "Raylib Go - 3D Kocka i Skakanje")
 	defer rl.CloseWindow()
 
 	menu.UcitajMenuSliku()
@@ -139,10 +139,10 @@ func main() {
 				for x := -halfDist; x <= halfDist; x++ {
 					pos := world.ChunkPos{X: playerCX + x, Z: playerCZ + z}
 					if chunk, exists := world.LoadedChunks[pos]; exists {
-						world.RenderChunk(*chunk)
+						world.RenderChunk(chunk)
 					}
 					if structure, exists := world.LoadedStructures[pos]; exists {
-						world.RenderChunk(*structure)
+						world.RenderChunk(structure)
 					}
 				}
 			}
