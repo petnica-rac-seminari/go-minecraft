@@ -49,6 +49,7 @@ func HandleBlockManipulation(camera *rl.Camera3D) {
 					if blok != blocks.Bedrock {
 						world.SetGlobalBlock(targetX, targetY, targetZ, blocks.Air)
 						updateNeighboringWater(targetX, targetY, targetZ)
+
 					}
 				} else {
 					placeX, placeY, placeZ := NJK(prevPos.X), NJK(prevPos.Y), NJK(prevPos.Z)
@@ -75,6 +76,7 @@ func HandleBlockManipulation(camera *rl.Camera3D) {
 
 						// Only place the block if it's clear of your bounding box!
 						if !collidesWithPlayer {
+
 							world.SetGlobalBlock(placeX, placeY, placeZ, SelectedBlock)
 							spreadFromNeighbors(placeX, placeY, placeZ)
 						}

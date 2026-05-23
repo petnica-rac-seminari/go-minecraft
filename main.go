@@ -26,10 +26,17 @@ func main() {
 	rl.InitAudioDevice()
 	defer rl.CloseAudioDevice()
 
-	music := rl.LoadMusicStream("muzika\\Minecraft.mp3")
-	defer rl.UnloadMusicStream(music)
+	music := rl.LoadMusicStream("muzika\\We Are Charlie Kirk.mp3")
+	musicParacin := rl.LoadMusicStream("muzika\\MATADORA (Niggerized)Hard Bass Visualizer  Dark Phonk Remix.mp3")
+	blockDestroySound := rl.LoadSound("muzika\\roblox-explosion-sound.mp3")
+	blockPlaceSound := rl.LoadSound("muzika\\block place.mp3")
+	portalSound := rl.LoadSound("muzika\\Nether Portal.mp3")
+	rl.SetMusicVolume(musicParacin, 0.5)
 
-	rl.PlayMusicStream(music)
+	defer rl.UnloadMusicStream(musicParacin)
+	defer rl.UnloadSound(blockDestroySound)
+	defer rl.UnloadSound(blockPlaceSound)
+	defer rl.UnloadSound(portalSound)
 
 	menu.UcitajMenuSliku()
 	defer menu.UnloadujMenuSliku()
@@ -53,12 +60,27 @@ func main() {
 
 	for !rl.WindowShouldClose() {
 		currentTick += rl.GetFrameTime()
-		rl.UpdateMusicStream(music)
-		if rl.IsMusicStreamPlaying(music) == false {
-			rl.PlayMusicStream(music)
+		rl.UpdateMusicStream(musicParacin)
+		if dim {
+			rl.StopMusicStream(musicParacin)
+			if rl.IsMusicStreamPlaying(music) == false {
+				rl.PlayMusicStream(music)
+			}
+		} else {
+			rl.StopMusicStream(music)
+			if rl.IsMusicStreamPlaying(musicParacin) == false {
+				rl.PlayMusicStream(musicParacin)
+			}
 		}
 
 		if !menu.IsMenu {
+
+			// Sound effects
+			if rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
+				rl.PlaySound(blockDestroySound)
+			} else if rl.IsMouseButtonPressed(rl.MouseButtonRight) {
+				rl.PlaySound(blockPlaceSound)
+			}
 			navigation.HandleBlockManipulation(&camera)
 			navigation.HandleMovement(&camera)
 			playerCX := int(math.Floor(float64(camera.Position.X) / 16.0))
@@ -124,6 +146,7 @@ func main() {
 
 			if portalTimer == 120 {
 				reljef.DimensionSwap(dim, halfDist, playerCX, playerCZ, camera)
+				rl.PlaySound(portalSound)
 				dim = !dim
 				portalTimer = 0
 			}
