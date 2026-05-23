@@ -12,4 +12,6 @@ const (
 	Snow
 	Log
 	Leaves
+	Netherrack
+	Sand
 )
