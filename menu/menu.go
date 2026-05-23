@@ -4,6 +4,7 @@ import (
 	"main/blocks"
 	"os"
 	"strconv"
+	"strings"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -11,30 +12,202 @@ import (
 var IsMenu bool = true
 var Seed int = 100
 var pozadina rl.Texture2D
-var creditsSlika rl.Texture2D
 
 var prikaziCredits bool = false
+var creditsScrollY float32 = 0
+var brzinaSkrola float32 = 1.0
 
 var seedTekst string = "100"
 var unosAktivan bool = false
 
+const creditsTekst = `CREDITS
+
+Nebo
+
+Mina: Radila na shaderima koji su na kraju propali 🤷.
+Igrala odbojku. Napucala slavka, opcinila celo porodicno stablo.
+Bila prekrstena od strane Sudomila Prvog,
+preskace mine na putu do skole.
+Kad se pitala sta je uradila, gledala je okolo
+na 2-3 sekunde i rekla idonno.
+Popila monstrozne kolicine kafe, jebale ju biblioteke.
+Napravila zid-Raca. Polu Jevrej, polu Musliman. Nedjelja.
+
+Nole: Igrao odbojku. Doziveo tesku telesnu povredu
+vece pred demo u krvavom fizickom sukobu,
+self-proclaimed main character (blam!).
+Izvodio orkestru po hodnicima i kafeteriji.
+Glumi heteroseksualnost. Lowk uradio vrlo ilegalnu stvar
+na sred predavanja koju ne smem da kazem,
+i onda se usrao da dolazi policija.
+
+Teodora: Radila na oblacima, menjala gradijent neba.
+Snimala svaku glupost koja se desila u Rac-u
+i izvan njega u zadnjih 8 dana,
+ne zna da implementira osnovne stvari kad ne rade,
+krivi team lidera da nije lepo reko kako to treba da funkcionise.
+
+Teona: Zaspala 30 min pred Demo.
+Napravila Stefan i Igora, nalazila teksture,
+pomogla Teodori za nebo. Investirala u kineske dronove,
+imala debatu o ekonomskom stanju u buducnosti.
+Ko dodje na petnicu da uci jebeni latinski, kao wtf.
+Juri ruse po cetvrtoj.
+
+Voda
+
+Slavica: Ubio se od rada, idalje radi, razboleo se,
+zamalo ubio Milutina, rvao se ispred Petnice.
+Ucio saradnika kako da kodira.
+Doneo cionizam na teritoriju Petnice,
+tvrdi da mandarine postanu kisele ako padnu na pod.
+Prekrsten od strane Mine-Ban. Polu Jevrej, polu Jevrej.
+
+Marija: Muvala ribu sa fizike.
+“Marija sta si ti radila?” “Vodu brt nznm ni ja”
+Radila do fora 5 ujutru svaki dan,
+ja stvarno nznm kako al kao gg. Nije vibe-codeovala.
+
+Zoe: Implementirala slivanje vode u prostoru,
+Paracin znak, bacala hate na Milutina
+jer je mazio Petnicke pse,
+jadna zavrsila sa fizicarima u sobi.
+
+Grafika
+
+Fikus: Uradio je on tu nesto, vredjao sve bez razloga,
+bukv je on jedini pravijo ijednu gresku kao nznm sta prica.
+Nebi ni jedan error bio da njega nije bilo,
+bukv bi svaki code iz prve runovao bez greske
+tacno onako kako treba. Glumio diktatora
+(Ne al kao fr on je uradio cetvrtinu svega)
+
+Mihailo: Sjebao sve, pravio gluposti, Co-founder Git-a,
+pola prvog dana nije ni programirao nego samo kao
+navodno popravljao neke tamo greske 🙄.
+
+Mihajlo: Best friends sa Gemini, Claude-ov secret lover.
+(Ne za vibe coding nego reasoning naravno, nisam Dimitrije)
+Danju spava, nocu se muva sa arheoloskim ribama.
+Ne bi imao snage za rad na igrici bez Purkele i Ustase
+lowk goated
+
+Sudomil: Bio nas izvor nade i samopouzdanja,
+dao nam snagu da zavrsimo projekat na vreme,
+jeo Milutinov toz, postavljao upitne upitke
+o upitnim ljudima ili 100 njih.
+Bio nosen umesto da radi na projektu,
+ali je ok jer ga volimo.
+
+Navigacija
+
+Dejan: Iznervirao se i uzeo pauzu od 4 sata,
+za malo izazvao gradjanski rat u svom timu,
+radio sve sem za svoj tim
+
+Dimitrije pro: Atleast i still have my vibes,
+potencijalan ratni kriminalac. Zaspao 90 min pred demo,
+jede mine na putu do skole. Toliko se naradio
+da je zadnji dan odmarao. Toliko koristio AI
+da se treba smatrati DOS napadom.
+
+Dunja: Napravila pola code koji je Fikus obrisao.
+Ne cuje svoj alarm i jedva se budi.
+Uradila 60% code-a za basic movement,
+followed by crashout i sladoled
+
+Lea: Isto napravila pola code koji je Fikus obrisao.
+Osnovala feministicku stranku unutar
+demokratske republike Navigacija
+
+Tea: Isto isto napravila pola code koji je Fikus obrisao.
+Co-founder FSDRN, govorila svima da smrde,
+ucila sve sem racunarstva.
+
+Fikus: Pogledao sav code iz Navigacije,
+izbrisao sav code iz Navigacije i napisao novi,
+net lines u minusu.
+
+Reljef
+
+Milca: Bila HR. Glumila majku, psihologa,
+motivacionog govornika
+
+Palestina: Svadjao se sa urosem, trosio vreme sva 3 dana,
+na kraju smo se slagali i mislili na istu stvar
+ali nismo iskomunicirali. Pustao sirene da usere noleta
+
+Vrhovni poglavar Ljubisa-Ban: Glumio tatu, Psilohologa,
+Project managera, Team managera, moderator zajednickog
+komunikacionog medija. Radio matematiku da ostali nebi morali,
+court jester, negativan vibe-coding. Pomagao svakom timu,
+ladyboy, davao da cure izrazavaju svoju vizuelnu kreativnost
+na njegovoj prelepoj faci. Bavio se optimizacijom,
+izmislio trigonometriju, founder Sudo-chat,
+Project i team organizer. Pravio main menu,
+napravio sistem odgovoran za promenu boje neba kroz vreme,
+leti preko mina na putu do skole. Polu Musliman,
+polu Musliman. Napravio credite (tekst, ne zna da programira kao Mihajlo)
+
+Marko: Igrao minecraft, lowk uradio 90% reljefa,
+prekrsten od strane teodore, napravio novu dimenziju.
+
+Honorable mentions:
+
+Teodor: Ljudski pesticid, vodja armije kmetova,
+prirodni fenomen, stitio racevce od strasne majke prirode.
+Davao predavanje od 2 do 3 ujutru o tome
+kako se jedu razve vrste buba, dvocifreni killcount.
+Davao predavanje od sat vremena o tome
+u sta treba investirati.
+
+Todor: Ljudski herbicid, jeo lisce, karton,
+koru od narandze, mandarinu kao jabuku,
+za malo da proba i bube da jede.
+Blejao sa rac uzivo umesto sa ribom,
+ona raskinula sa njim.
+
+Geografija: ulazija na svakih 5 jebenih minuta
+da bi pitali da li neko ima cigarete i upaljac,
+buraz nemamo kao mi smo racevci zar stvarno mislis
+da imamo cigarete jebote kao usli ste 10000 puta
+u zdanjih 3 dana koji vam je vise ajte kuci jebote.
+bivani kompletno seenovani kad pitjau oce li ko mafije.`
+
+var linijeTeksta []string
+
 func UcitajMenuSliku() {
 	pozadina = rl.LoadTexture("menufinal.png")
-	creditsSlika = rl.LoadTexture("credits.png")
+	linijeTeksta = strings.Split(creditsTekst, "\n")
 }
 
 func UnloadujMenuSliku() {
 	rl.UnloadTexture(pozadina)
-	rl.UnloadTexture(creditsSlika)
 }
 
 func Crtaj() {
 	if prikaziCredits {
 		rl.ClearBackground(rl.Black)
-		izvor := rl.NewRectangle(0, 0, float32(creditsSlika.Width), float32(creditsSlika.Height))
-		odrediste := rl.NewRectangle(0, 0, float32(rl.GetScreenWidth()), float32(rl.GetScreenHeight()))
-		centar := rl.NewVector2(0, 0)
-		rl.DrawTexturePro(creditsSlika, izvor, odrediste, centar, 0.0, rl.White)
+
+		creditsScrollY -= brzinaSkrola
+
+		trenutniY := creditsScrollY
+		velicinaFonta := int32(20)
+		razmakIzmedjuLinija := int32(30)
+
+		for _, linija := range linijeTeksta {
+			sirinaTeksta := rl.MeasureText(linija, velicinaFonta)
+			centriranoX := (int32(rl.GetScreenWidth()) - sirinaTeksta) / 2
+
+			if trenutniY > -50 && trenutniY < float32(rl.GetScreenHeight()) {
+				rl.DrawText(linija, centriranoX, int32(trenutniY), velicinaFonta, rl.White)
+			}
+			trenutniY += float32(razmakIzmedjuLinija)
+		}
+
+		if trenutniY < 0 {
+			prikaziCredits = false
+		}
 
 		if rl.IsKeyPressed(rl.KeyEscape) || rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
 			prikaziCredits = false
@@ -69,6 +242,7 @@ func Crtaj() {
 		creditsBoja = rl.LightGray
 		if rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
 			prikaziCredits = true
+			creditsScrollY = float32(rl.GetScreenHeight())
 		}
 	}
 	rl.DrawRectangleRec(creditsRect, creditsBoja)
