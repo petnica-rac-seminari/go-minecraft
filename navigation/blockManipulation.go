@@ -9,7 +9,7 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-var selectedBlock blocks.Block = blocks.Grass
+var SelectedBlock blocks.Block = blocks.Grass
 
 func getScreenCenter() rl.Vector2 {
 	return rl.NewVector2(
@@ -24,7 +24,7 @@ func selectBlock() {
 		targetKey := int32(rl.KeyOne) + int32(i)
 
 		if rl.IsKeyPressed(targetKey) {
-			selectedBlock = blocks.Block(i + 1)
+			SelectedBlock = blocks.Block(i + 1)
 		}
 	}
 }
@@ -75,7 +75,7 @@ func HandleBlockManipulation(camera *rl.Camera3D) {
 
 						// Only place the block if it's clear of your bounding box!
 						if !collidesWithPlayer {
-							world.SetGlobalBlock(placeX, placeY, placeZ, selectedBlock)
+							world.SetGlobalBlock(placeX, placeY, placeZ, SelectedBlock)
 							spreadFromNeighbors(placeX, placeY, placeZ)
 						}
 					}

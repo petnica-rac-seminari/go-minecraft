@@ -1,7 +1,6 @@
 package dayNightCycle
 
 import (
-	"fmt"
 	"image/color"
 	"math"
 

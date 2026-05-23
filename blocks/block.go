@@ -5,7 +5,6 @@ type Block int
 const (
 	Air Block = iota
 	Water
-	Bedrock
 	Grass
 	Dirt
 	Stone
@@ -16,4 +15,5 @@ const (
 	Sand
 	Sudomil_bot
 	Sudomil_top
+	Bedrock
 )
