@@ -206,32 +206,6 @@ func RenderChunk(c *Chunk) {
 	}
 }
 
-func RenderChunk(c *Chunk) {
-	if c.IsDirty || c.CachedTransforms == nil {
-		c.RebuildMeshCache()
-	}
-
-	RegistryInstance := BlockModelRegistry()
-
-	for blockType, transforms := range c.CachedTransforms {
-		count := len(transforms)
-		if count == 0 {
-			continue
-		}
-
-		val, ok := RegistryInstance.BlockModels[blockType]
-		if !ok {
-			continue
-		}
-
-		mesh := *val.Meshes
-		material := *val.Materials
-
-		// Feed the low-level rendering loop a clean address to index zero
-		rl.DrawMeshInstanced(mesh, material, transforms, count)
-	}
-}
-
 func WorldToLocal(chunk Chunk, wx, wy, wz int) (lx, ly, lz int) {
 	lx = wx - chunk.GlobalX*16
 	ly = wy
