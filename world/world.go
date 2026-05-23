@@ -205,3 +205,47 @@ func RenderChunk(c *Chunk) {
 		rl.DrawMeshInstanced(mesh, material, transforms, count)
 	}
 }
+
+func RenderChunk(c *Chunk) {
+	if c.IsDirty || c.CachedTransforms == nil {
+		c.RebuildMeshCache()
+	}
+
+	RegistryInstance := BlockModelRegistry()
+
+	for blockType, transforms := range c.CachedTransforms {
+		count := len(transforms)
+		if count == 0 {
+			continue
+		}
+
+		val, ok := RegistryInstance.BlockModels[blockType]
+		if !ok {
+			continue
+		}
+
+		mesh := *val.Meshes
+		material := *val.Materials
+
+		// Feed the low-level rendering loop a clean address to index zero
+		rl.DrawMeshInstanced(mesh, material, transforms, count)
+	}
+}
+
+func WorldToLocal(chunk Chunk, wx, wy, wz int) (lx, ly, lz int) {
+	lx = wx - chunk.GlobalX*16
+	ly = wy
+	lz = wz - chunk.GlobalZ*16
+	return lx, ly, lz
+}
+
+func LocalToWorld(chunk Chunk, lx, ly, lz int) (wx, wy, wz int) { //mozda nije dobro, prekopiro sam dimijevo otp
+	wx = lx + chunk.GlobalX*16
+	wy = ly
+	wz = lz - chunk.GlobalZ*16
+	return lx, ly, lz
+}
+
+// func Highlight() {
+// 	return
+// }

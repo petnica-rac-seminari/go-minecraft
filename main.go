@@ -5,7 +5,6 @@ import (
 	"math/rand"
 
 	reljef "main/Reljef"
-	"main/blocks"
 	nebo "main/dayNightCycle"
 	"main/menu"
 	"main/navigation"
@@ -15,7 +14,7 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-const render_dist = 4
+const render_dist = 3
 
 func main() {
 	rl.SetConfigFlags(rl.FlagWindowResizable)
@@ -36,27 +35,18 @@ func main() {
 	rng := rand.New(rand.NewSource(int64(menu.Seed)))
 	_ = rng
 
-	var verticalVelocity float32 = 0.0
-	const gravity float32 = -26.0
-	const jumpForce float32 = 8.5
-	var isGrounded bool = true
-	var BlockToPlace blocks.Block = blocks.Grass
-
-	const maxReach = navigation.DefaultMaxReach
-	var lastHit navigation.RaycastHit
 	var currentTick float32 = 0
 	var clouds []oblaci.CLOUDS = oblaci.GenerateClouds()
 	sunce_model := nebo.RenderSun()
 	var dim bool = true
 
-	var jumpCtrl navigation.JumpInput
-	const eyeHeight = navigation.DefaultEyeHeight
-
 	for !rl.WindowShouldClose() {
 		currentTick += rl.GetFrameTime()
 
 		if !menu.IsMenu {
-			rl.UpdateCamera(&camera, rl.CameraFirstPerson)
+
+			navigation.HandleBlockManipulation(&camera)
+			navigation.HandleMovement(&camera)
 
 			playerCX := int(math.Floor(float64(camera.Position.X) / 16.0))
 			playerCZ := int(math.Floor(float64(camera.Position.Z) / 16.0))
@@ -129,56 +119,6 @@ func main() {
 				camera.Position.Y += 5
 			}
 
-			navigation.ApplyHorizontalCollision(&camera, eyeHeight, navigation.PlayerHalfWidth)
-
-			dir := navigation.CameraDirection(camera)
-			hit := navigation.Raycast(camera.Position, dir, maxReach)
-			lastHit = hit
-
-			// Sada switch koristi istu promenljivu i promena radi savršeno
-			switch trenutniTaster {
-			case rl.KeyOne:
-				BlockToPlace = blocks.Grass
-			case rl.KeyTwo:
-				BlockToPlace = blocks.Dirt
-			case rl.KeyThree:
-				BlockToPlace = blocks.Stone
-			case rl.KeyFour:
-				BlockToPlace = blocks.Water
-			case rl.KeyFive:
-				BlockToPlace = blocks.Snow
-			}
-
-			if rl.IsMouseButtonPressed(rl.MouseButtonLeft) && hit.Hit {
-				navigation.DestroyBlock(hit.X, hit.Y, hit.Z)
-			}
-			if rl.IsMouseButtonPressed(rl.MouseButtonRight) && hit.Hit {
-				navigation.PlaceAdjacent(hit, BlockToPlace)
-			}
-
-			if rl.IsKeyPressed(rl.KeySpace) && isGrounded {
-				verticalVelocity = jumpForce
-				isGrounded = false
-			}
-
-			if navigation.IsAirborne(camera.Position, eyeHeight, navigation.PlayerHalfWidth) {
-				isGrounded = false
-			}
-
-			canJump := isGrounded && !navigation.IsAirborne(camera.Position, eyeHeight, navigation.PlayerHalfWidth)
-			if navigation.TryDoubleTapJump(&jumpCtrl, rl.GetTime(), rl.IsKeyPressed(rl.KeySpace), canJump) {
-				verticalVelocity = jumpForce
-				isGrounded = false
-			}
-
-			if !isGrounded {
-				verticalVelocity += gravity * rl.GetFrameTime()
-				camera.Position.Y += verticalVelocity * rl.GetFrameTime()
-				camera.Target.Y += verticalVelocity * rl.GetFrameTime()
-			}
-
-			navigation.ApplyVerticalBlockPhysics(&camera, &verticalVelocity, &isGrounded, eyeHeight)
-
 			oblaci.MoveClouds(clouds, camera.Position.Y)
 		}
 
@@ -206,9 +146,6 @@ func main() {
 			}
 
 			oblaci.DrawClouds(clouds, rl.Vector3{camera.Position.X, camera.Position.Y, camera.Position.Z})
-			if lastHit.Hit {
-				navigation.DrawBlockOutline(lastHit.X, lastHit.Y, lastHit.Z, rl.Yellow)
-			}
 
 			rl.DrawModel(*sunce_model, nebo.MoveSun(float64(nebo.SkyBodyAngle(currentTick)), camera), 1.0, rl.White)
 
@@ -219,7 +156,7 @@ func main() {
 			rl.DrawText("LMB - Unisti | RMB - Postavi blok", 10, 70, 20, rl.DarkGray)
 
 			// Hotbar crtanje
-			menu.CrtajHotbar(BlockToPlace)
+			menu.CrtajHotbar(navigation.SelectedBlock)
 		} else {
 			rl.ClearBackground(rl.DarkGray)
 			menu.Crtaj()
