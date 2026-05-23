@@ -7,31 +7,39 @@ type Cord struct {
 }
 
 type DeoPointer struct {
+	mali   *MalaReka
+	veliki *VelikaReka
+	potok  *Potok
 }
 
 type Reke struct {
 	velike []VelikaReka
 	male   []MalaReka
+	potoci []Potok
 }
 
 type MalaReka struct {
-	rank int
-	deo  []Deo
+	rank    int
+	deo     []Deo
+	pointer *Reke
 }
 
 type VelikaReka struct {
-	rank int
-	deo  []Deo
+	rank    int
+	deo     []Deo
+	pointer *Reke
 }
 
 type Potok struct {
-	deo []Deo
+	deo     []Deo
+	pointer *Reke
 }
 
 type Deo struct {
 	start   Cord
 	end     Cord
 	pointer DeoPointer
+	sirina  int
 }
 
 func NewDeo(x1 int, y1 int, z1 int, x2 int, y2 int, z2 int) Deo {
@@ -43,12 +51,21 @@ func NewDeo(x1 int, y1 int, z1 int, x2 int, y2 int, z2 int) Deo {
 }
 
 func (m *MalaReka) Add(d *Deo) {
+	d.pointer.mali = *&m
+	d.pointer.potok = nil
+	d.pointer.veliki = nil
 	m.deo = append(m.deo, *d)
 }
 func (v *VelikaReka) Add(d *Deo) {
+	d.pointer.mali = nil
+	d.pointer.veliki = *&v
+	d.pointer.potok = nil
 	v.deo = append(v.deo, *d)
 }
 func (p *Potok) Add(d *Deo) {
+	d.pointer.mali = nil
+	d.pointer.veliki = nil
+	d.pointer.potok = &*p
 	p.deo = append(p.deo, *d)
 }
 
@@ -57,6 +74,11 @@ func (r *Reke) AddMale(mr *MalaReka) {
 	r.male = append(r.male, *mr)
 }
 func (r *Reke) AddVelike(vr *VelikaReka) {
+	vr.pointer = *&r
 	vr.rank = len(r.velike)
 	r.velike = append(r.velike, *vr)
+}
+func (r *Reke) AddPotoci(p *Potok) {
+	p.pointer = *&r
+	r.potoci = append(r.potoci, *p)
 }
