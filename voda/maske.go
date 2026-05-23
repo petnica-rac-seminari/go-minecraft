@@ -67,6 +67,9 @@ func recicaMask(x, y, z int) {
 	for i := xd1; i <= xd2; i++ {
 		for j := zd1; j <= zd2; j++ {
 			for k := y; k >= yd1; k-- {
+				if k < 2 {
+					continue
+				}
 				if (i-xDno)*(i-xDno)+(j-zDno)*(j-zDno)+(k-yDno)*(k-yDno) <= 1700 {
 					setBlock(i, k, j, blocks.BlockDirt)
 				}
@@ -128,6 +131,9 @@ func rekaMask(x, y, z int) {
 	for i := xd1; i <= xd2; i++ {
 		for j := zd1; j <= zd2; j++ {
 			for k := y; k >= yd1; k-- {
+				if k < 2 {
+					continue
+				}
 				if (i-xDno)*(i-xDno)+(j-zDno)*(j-zDno)+(k-yDno)*(k-yDno) <= 4100 {
 					setBlock(i, k, j, blocks.BlockDirt)
 				}
@@ -160,6 +166,9 @@ func rekaMask(x, y, z int) {
 	for i := xv1; i <= xv2; i++ {
 		for j := zv1; j <= zv2; j++ {
 			for k := y; k <= yVrh; k++ {
+				if k < 2 {
+					continue
+				}
 				if (i-xVrh)*(i-xVrh)+(j-zVrh)*(j-zVrh)+(k-yVrh)*(k-yVrh) <= 4100 {
 					setBlock(i, k, j, blocks.BlockAir)
 				}
