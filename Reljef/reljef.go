@@ -192,6 +192,18 @@ func treeChecker(x, z int, gen_structs [][]bool) bool {
 	return true
 }
 
+func GenerateRiverMap(chunkX, chunkZ, x, z int, frequency float64, seed int64) bool {
+	n, _ := noise.New(noise.OpenSimplex, seed)
+
+	riverMap := (n.Eval64(float64(x+16*chunkX)*frequency, float64(z+16*chunkZ)*frequency) + 0.866) * 0.577
+
+	if riverMap >= 0.47 && riverMap <= 0.53 {
+		return true
+	} else {
+		return false
+	}
+}
+
 func GenerateOW(startX, startZ, seed int) world.Chunk {
 	chunk := make([][][]blocks.Block, 16)
 	det_trees := DetermineTrees(startX, startZ, seed)
@@ -271,6 +283,10 @@ func GenerateOW(startX, startZ, seed int) world.Chunk {
 						chunk[x][y][z] = blocks.Water
 					}
 				}
+			}
+
+			if GenerateRiverMap(startX, startZ, x, z, 0.02, int64(seed)) {
+
 			}
 		}
 	}
