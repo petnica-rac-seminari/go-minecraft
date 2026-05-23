@@ -17,9 +17,10 @@ import (
 	"main/world"
 )
 
-const render_dist = 4
+const render_dist = 3
 
 func main() {
+	rl.SetConfigFlags(rl.FlagWindowResizable)
 	rl.InitWindow(1600, 900, "Raylib Go - 3D Kocka i Skakanje")
 	defer rl.CloseWindow()
 
@@ -32,14 +33,25 @@ func main() {
 	rl.DisableCursor()
 	rl.SetTargetFPS(60)
 
-	var time float32 = 0
+	var verticalVelocity float32 = 0.0
+	const gravity float32 = -26.0
+	const jumpForce float32 = 8.5
+	var isGrounded bool = true
+	var BlockToPlace blocks.Block = blocks.Grass
+
+	const maxReach = navigation.DefaultMaxReach
+	var lastHit navigation.RaycastHit
+	var current_tick float32 = 0
 	var clouds []oblaci.CLOUDS = oblaci.GenerateClouds()
 
-	for !rl.WindowShouldClose() {
-		time += rl.GetFrameTime()
+	var jumpCtrl navigation.JumpInput
+	const eyeHeight = navigation.DefaultEyeHeight
 
-		nav.HandleBlockManipulation(&camera)
-		nav.HandleMovement(&camera)
+	sunce_model := nebo.RenderSun()
+
+	for !rl.WindowShouldClose() {
+		current_tick += rl.GetFrameTime()
+		rl.UpdateCamera(&camera, rl.CameraFirstPerson)
 
 		playerCX := int(math.Floor(float64(camera.Position.X) / 16.0))
 		playerCZ := int(math.Floor(float64(camera.Position.Z) / 16.0))
@@ -56,8 +68,59 @@ func main() {
 			}
 		}
 
+		navigation.ApplyHorizontalCollision(&camera, eyeHeight, navigation.PlayerHalfWidth)
+
+		dir := navigation.CameraDirection(camera)
+		hit := navigation.Raycast(camera.Position, dir, maxReach)
+		lastHit = hit
+
+		switch rl.GetKeyPressed() {
+		case rl.KeyOne:
+			BlockToPlace = blocks.Grass
+		case rl.KeyTwo:
+			BlockToPlace = blocks.Dirt
+		case rl.KeyThree:
+			BlockToPlace = blocks.Stone
+		case rl.KeyFour:
+			BlockToPlace = blocks.Water
+		case rl.KeyFive:
+			BlockToPlace = blocks.Snow
+		}
+
+		if rl.IsMouseButtonPressed(rl.MouseButtonLeft) && hit.Hit {
+			navigation.DestroyBlock(hit.X, hit.Y, hit.Z)
+		}
+		if rl.IsMouseButtonPressed(rl.MouseButtonRight) && hit.Hit {
+			navigation.PlaceAdjacent(hit, BlockToPlace)
+		}
+
+		if rl.IsKeyPressed(rl.KeySpace) && isGrounded {
+			verticalVelocity = jumpForce
+			isGrounded = false
+		}
+
+		if navigation.IsAirborne(camera.Position, eyeHeight, navigation.PlayerHalfWidth) {
+			isGrounded = false
+		}
+
+		canJump := isGrounded && !navigation.IsAirborne(camera.Position, eyeHeight, navigation.PlayerHalfWidth)
+		if navigation.TryDoubleTapJump(&jumpCtrl, rl.GetTime(), rl.IsKeyPressed(rl.KeySpace), canJump) {
+			verticalVelocity = jumpForce
+			isGrounded = false
+		}
+
+		if !isGrounded {
+			verticalVelocity += gravity * rl.GetFrameTime()
+			camera.Position.Y += verticalVelocity * rl.GetFrameTime()
+			camera.Target.Y += verticalVelocity * rl.GetFrameTime()
+		}
+
+		oblaci.MoveClouds(clouds)
+
+		navigation.ApplyVerticalBlockPhysics(&camera, &verticalVelocity, &isGrounded, eyeHeight)
+
 		rl.BeginDrawing()
-		rl.ClearBackground(nebo.SkyColor(int(time)))
+		rl.ClearBackground(nebo.SkyColor(int(current_tick)))
 
 		rl.BeginMode3D(camera)
 
@@ -70,7 +133,11 @@ func main() {
 			}
 		}
 
-		oblaci.RenderCloud(clouds)
+		oblaci.DrawClouds(clouds)
+		rl.DrawModel(*sunce_model, nebo.MoveSun(float64(nebo.SkyBodyAngle(current_tick)), camera), 1.0, rl.White)
+		if lastHit.Hit {
+			navigation.DrawBlockOutline(lastHit.X, lastHit.Y, lastHit.Z, rl.Yellow)
+		}
 
 		rl.EndMode3D()
 
@@ -78,7 +145,7 @@ func main() {
 		rl.DrawText("WASD - Kretanje | Mis - Okretanje | Space - Skok", 10, 40, 20, rl.DarkGray)
 		rl.DrawText("LMB - Unisti | RMB - Postavi blok", 10, 70, 20, rl.DarkGray)
 		rl.DrawText("1 - Grass | 2 - Dirt | 3 - Stone | 4 - Water | 5 - Snow", 10, 550, 20, rl.Black)
-		rl.DrawText(fmt.Sprintf("%d, %d, %d", int(camera.Position.X), int(camera.Position.Y), int(camera.Position.Z)), 50, 50, 20, rl.Yellow)
+		rl.DrawCircle(int32(rl.GetScreenWidth())/2, int32(rl.GetScreenHeight())/2, 10, rl.White)
 
 		rl.EndDrawing()
 	}
