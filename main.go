@@ -6,10 +6,9 @@ import (
 	"math/rand"
 
 	reljef "main/Reljef"
-	nebo "main/dayNightCycle"
 	"main/menu"
 	"main/navigation"
-	"main/oblaci"
+	nebo "main/nebo"
 	"main/world"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -53,8 +52,6 @@ func main() {
 	_ = rng
 
 	var currentTick float32 = 0
-	var clouds []oblaci.CLOUDS = oblaci.GenerateClouds()
-	sunce_model := nebo.RenderSun()
 	var dim bool = true
 	var portalTimer int = 0
 
@@ -103,18 +100,13 @@ func main() {
 				}
 			}
 
-			// SKLADIŠTIMO TASTER U PROMENLJIVU DA GA NE BISMO PROGUTALI!
-			//trenutniTaster := rl.GetKeyPressed()
-
-			oblaci.MoveClouds(clouds, camera.Position.Y)
-
 		}
 
 		rl.BeginDrawing()
 
 		if !menu.IsMenu {
 			rl.DisableCursor()
-			rl.ClearBackground(nebo.SkyColor(int(currentTick), dim))
+			// rl.ClearBackground(nebo.SkyColor(int(currentTick), dim))
 			rl.BeginMode3D(camera)
 
 			playerCX := int(math.Floor(float64(camera.Position.X) / 16.0))
@@ -132,11 +124,7 @@ func main() {
 					}
 				}
 			}
-
-			oblaci.DrawClouds(clouds, rl.Vector3{camera.Position.X, camera.Position.Y, camera.Position.Z})
-
-			rl.DrawModel(*sunce_model, nebo.MoveSun(float64(nebo.SkyBodyAngle(currentTick)), camera), 1.0, rl.White)
-
+			nebo.HandleNebo(camera, currentTick)
 			if world.GetGlobalBlock(int(camera.Position.X), int(camera.Position.Y-2), int(camera.Position.Z)) == 13 {
 				portalTimer++
 				fmt.Printf("%v ", portalTimer)
