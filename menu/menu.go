@@ -51,7 +51,7 @@ func Crtaj() {
 
 	misPozicija := rl.GetMousePosition()
 
-	playRect := rl.NewRectangle(720, 500, 400, 100)
+	playRect := rl.NewRectangle(100, 600, 400, 100)
 	playBoja := rl.Gray
 	if rl.CheckCollisionPointRec(misPozicija, playRect) {
 		playBoja = rl.LightGray
@@ -61,9 +61,9 @@ func Crtaj() {
 		}
 	}
 	rl.DrawRectangleRec(playRect, playBoja)
-	rl.DrawText("PLAY", 720+(400-rl.MeasureText("PLAY", 30))/2, 535, 30, rl.Black)
+	rl.DrawText("PLAY", int32(playRect.X)+(int32(playRect.Width)-rl.MeasureText("PLAY", 30))/2, int32(playRect.Y)+35, 30, rl.Black)
 
-	creditsRect := rl.NewRectangle(720, 650, 400, 100)
+	creditsRect := rl.NewRectangle(100, 750, 400, 100)
 	creditsBoja := rl.Gray
 	if rl.CheckCollisionPointRec(misPozicija, creditsRect) {
 		creditsBoja = rl.LightGray
@@ -72,9 +72,9 @@ func Crtaj() {
 		}
 	}
 	rl.DrawRectangleRec(creditsRect, creditsBoja)
-	rl.DrawText("CREDITS", 720+(400-rl.MeasureText("CREDITS", 30))/2, 685, 30, rl.Black)
+	rl.DrawText("CREDITS", int32(creditsRect.X)+(int32(creditsRect.Width)-rl.MeasureText("CREDITS", 30))/2, int32(creditsRect.Y)+35, 30, rl.Black)
 
-	quitRect := rl.NewRectangle(720, 800, 400, 100)
+	quitRect := rl.NewRectangle(100, 900, 400, 100)
 	quitBoja := rl.Gray
 	if rl.CheckCollisionPointRec(misPozicija, quitRect) {
 		quitBoja = rl.Maroon
@@ -84,9 +84,9 @@ func Crtaj() {
 		}
 	}
 	rl.DrawRectangleRec(quitRect, quitBoja)
-	rl.DrawText("QUIT", 720+(400-rl.MeasureText("QUIT", 30))/2, 835, 30, rl.Black)
+	rl.DrawText("QUIT", int32(quitRect.X)+(int32(quitRect.Width)-rl.MeasureText("QUIT", 30))/2, int32(quitRect.Y)+35, 30, rl.Black)
 
-	seedRect := rl.NewRectangle(1200, 500, 150, 100)
+	seedRect := rl.NewRectangle(580, 600, 150, 100)
 
 	if rl.CheckCollisionPointRec(misPozicija, seedRect) && rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
 		unosAktivan = true
@@ -124,12 +124,12 @@ func Crtaj() {
 	}
 
 	if len(seedTekst) == 0 && unosAktivan {
-		rl.DrawText("|", 1210, 535, 30, rl.White)
+		rl.DrawText("|", int32(seedRect.X)+10, int32(seedRect.Y)+35, 30, rl.White)
 	} else {
-		rl.DrawText(seedTekst, 1200+(150-rl.MeasureText(seedTekst, 30))/2, 535, 30, rl.White)
+		rl.DrawText(seedTekst, int32(seedRect.X)+(int32(seedRect.Width)-rl.MeasureText(seedTekst, 30))/2, int32(seedRect.Y)+35, 30, rl.White)
 	}
 
-	rl.DrawText("SEED:", 1200, 465, 24, rl.White)
+	rl.DrawText("SEED:", int32(seedRect.X), int32(seedRect.Y)-35, 24, rl.White)
 
 	if rl.IsKeyPressed(rl.KeyEnter) {
 		IsMenu = false
