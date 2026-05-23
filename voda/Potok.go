@@ -43,21 +43,19 @@ func findNearestAir(c *Cord) {
 		}
 
 		// Umesto funkcije which block koristicemo funkciju za trazenja visine na {x,y}
-		if BlockTypeAt(x, c.y, z) == block.BlockAir {
+		if hight < c.y {
 			c = &Cord{x: x, y: c.y - 1, z: z}
 			break
 		}
 	}
 }
 
-func GeneratePotok(startX, startY, startZ int) {
-
-	cordsForPotok := Cord{x: startX, y: startY, z: startZ}
+func GeneratePotok(cordsForPotok Cord) {
 
 	var privremeniPotok Potok
 	var dio Deo
 
-	for y := startY; y > baseHeight; y-- {
+	for y := cordsForPotok.y; y > baseHeight; y-- {
 		dio.start = cordsForPotok
 		findNearestAir(&cordsForPotok)
 		dio.end = cordsForPotok
