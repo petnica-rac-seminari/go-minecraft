@@ -42,8 +42,9 @@ func findNearestAir(c *Cord) {
 			queue = append(queue, []int{x - 1, z})
 		}
 
+		// Umesto funkcije which block koristicemo funkciju za trazenja visine na {x,y}
 		if BlockTypeAt(x, c.y, z) == block.BlockAir {
-			c = &Cord{x: x, y: c.y, z: z}
+			c = &Cord{x: x, y: c.y - 1, z: z}
 			break
 		}
 	}
