@@ -8,10 +8,12 @@ import (
 )
 
 type Chunk struct {
-	GlobalX  int
-	GlobalZ  int
-	Blocks   [][][]blocks.Block
-	Rendered bool
+	GlobalX          int
+	GlobalZ          int
+	Blocks           [][][]blocks.Block
+	Rendered         bool
+	CachedTransforms map[blocks.Block][]rl.Matrix
+	IsDirty          bool
 }
 
 type ChunkPos struct {
@@ -24,19 +26,44 @@ var LoadedStructures = make(map[ChunkPos]*Chunk)
 var BlockModelRegistryInstance *BlockRegistry
 
 type BlockRegistry struct {
-	BlockModels map[blocks.Block]rl.Model
+	BlockModels      map[blocks.Block]rl.Model
+	InstancingShader rl.Shader
 }
 
 func (br *BlockRegistry) RegisterNewModel(block blocks.Block, cubeMesh rl.Mesh, path string) {
 	new_model := rl.LoadModelFromMesh(cubeMesh)
-	rl.SetMaterialTexture(new_model.Materials, rl.MapDiffuse, rl.LoadTexture(path))
+
+	// CRUCIAL: Load texture using raylib defaults
+	// Bind our verified instancing shader program safely to the mesh material
+	new_model.Materials.Shader = br.InstancingShader
+
+	// Initialize default material diffuse color tint so it isn't transparent black (0,0,0,0)
+	new_model.Materials.GetMap(rl.MapDiffuse).Color = rl.White
+	texture := rl.LoadTexture(path)
+	rl.SetMaterialTexture(new_model.Materials, rl.MapDiffuse, texture)
+
 	br.BlockModels[block] = new_model
 }
 
 func BlockModelRegistry() *BlockRegistry {
 	if BlockModelRegistryInstance == nil {
+		shader := rl.LoadShader("instancing.vs", "instancing.fs")
+
+		// 2. Map standard raylib camera uniform location maps
+		shader.UpdateLocation(rl.ShaderLocMatrixMvp, rl.GetShaderLocation(shader, "mvp"))
+		shader.UpdateLocation(rl.ShaderLocMapDiffuse, rl.GetShaderLocation(shader, "texture0"))
+		shader.UpdateLocation(rl.ShaderLocColorDiffuse, rl.GetShaderLocation(shader, "colDiffuse"))
+
+		// 3. Map the instancing location attribute channel
+		// This tells raylib's internal C loop exactly where to dump your matrix data array
+		shader.UpdateLocation(rl.ShaderLocMatrixModel, rl.GetShaderLocationAttrib(shader, "instanceTransform"))
+
 		cubeMesh := rl.GenMeshCube(1.0, 1.0, 1.0)
-		BlockModelRegistryInstance = &BlockRegistry{BlockModels: make(map[blocks.Block]rl.Model)}
+		BlockModelRegistryInstance = &BlockRegistry{
+			BlockModels:      make(map[blocks.Block]rl.Model),
+			InstancingShader: shader,
+		}
+
 		BlockModelRegistryInstance.RegisterNewModel(blocks.Grass, cubeMesh, "assets/grass.png")
 		BlockModelRegistryInstance.RegisterNewModel(blocks.Dirt, cubeMesh, "assets/dirt.png")
 		BlockModelRegistryInstance.RegisterNewModel(blocks.Water, cubeMesh, "assets/water.png")
@@ -79,24 +106,16 @@ func SetGlobalBlock(worldX, worldY, worldZ int, b blocks.Block) bool {
 		lz := worldZ - cz*16
 		if lx >= 0 && lx < 16 && lz >= 0 && lz < 16 {
 			chunk.Blocks[lx][worldY][lz] = b
+			chunk.IsDirty = true
 			return true
 		}
 	}
 	return false
 }
 
-func RenderBlock(block blocks.Block, x, y, z int) {
-	RegistryInstance := BlockModelRegistry()
-	val, ok := RegistryInstance.BlockModels[block]
+func (c *Chunk) RebuildMeshCache() {
+	c.CachedTransforms = make(map[blocks.Block][]rl.Matrix)
 
-	if !ok {
-		return
-	}
-
-	rl.DrawModel(val, rl.NewVector3(float32(x), float32(y), float32(z)), 1.0, rl.White)
-}
-
-func RenderChunk(c Chunk) {
 	xLen := len(c.Blocks)
 	if xLen == 0 {
 		return
@@ -106,48 +125,81 @@ func RenderChunk(c Chunk) {
 	for x := 0; x < xLen; x++ {
 		for y := 0; y < yLen; y++ {
 			for z := 0; z < 16; z++ {
-				currentBlock := c.Blocks[x][y][z]
-				if currentBlock == blocks.Air || currentBlock == blocks.Water {
+				blockType := c.Blocks[x][y][z]
+				if blockType == blocks.Air {
 					continue
 				}
 
-				wx := x + c.GlobalX*16
-				wz := z + c.GlobalZ*16
+				// FAST LOCAL ARRAY READS: Avoid running global map lookups in walls
+				var left, right, down, up, back, front blocks.Block
 
-				neighborIsAir := GetGlobalBlock(wx-1, y, wz) == blocks.Air || GetGlobalBlock(wx+1, y, wz) == blocks.Air ||
-					GetGlobalBlock(wx, y-1, wz) == blocks.Air || GetGlobalBlock(wx, y+1, wz) == blocks.Air ||
-					GetGlobalBlock(wx, y, wz-1) == blocks.Air || GetGlobalBlock(wx, y, wz+1) == blocks.Air
+				if x > 0 {
+					left = c.Blocks[x-1][y][z]
+				} else {
+					left = GetGlobalBlock(x+c.GlobalX*16-1, y, z+c.GlobalZ*16)
+				}
+				if x < xLen-1 {
+					right = c.Blocks[x+1][y][z]
+				} else {
+					right = GetGlobalBlock(x+c.GlobalX*16+1, y, z+c.GlobalZ*16)
+				}
+				if y > 0 {
+					down = c.Blocks[x][y-1][z]
+				} else {
+					down = blocks.Air
+				}
+				if y < yLen-1 {
+					up = c.Blocks[x][y+1][z]
+				} else {
+					up = blocks.Air
+				}
+				if z > 0 {
+					back = c.Blocks[x][y][z-1]
+				} else {
+					back = GetGlobalBlock(x+c.GlobalX*16, y, z+c.GlobalZ*16-1)
+				}
+				if z < 15 {
+					front = c.Blocks[x][y][z+1]
+				} else {
+					front = GetGlobalBlock(x+c.GlobalX*16, y, z+c.GlobalZ*16+1)
+				}
 
-				neighborIsWater := GetGlobalBlock(wx-1, y, wz) == blocks.Water || GetGlobalBlock(wx+1, y, wz) == blocks.Water ||
-					GetGlobalBlock(wx, y-1, wz) == blocks.Water || GetGlobalBlock(wx, y+1, wz) == blocks.Water ||
-					GetGlobalBlock(wx, y, wz-1) == blocks.Water || GetGlobalBlock(wx, y, wz+1) == blocks.Water
+				// Face Culling optimization
+				if left == blocks.Air || right == blocks.Air || down == blocks.Air || up == blocks.Air || back == blocks.Air || front == blocks.Air {
+					wx := x + c.GlobalX*16
+					wz := z + c.GlobalZ*16
 
-				if neighborIsAir || neighborIsWater {
-					RenderBlock(currentBlock, wx, y, wz)
+					translation := rl.MatrixTranslate(float32(wx), float32(y), float32(wz))
+					c.CachedTransforms[blockType] = append(c.CachedTransforms[blockType], translation)
 				}
 			}
 		}
 	}
+	c.IsDirty = false
+}
 
-	for x := 0; x < xLen; x++ {
-		for y := 0; y < yLen; y++ {
-			for z := 0; z < 16; z++ {
-				currentBlock := c.Blocks[x][y][z]
-				if currentBlock != blocks.Water {
-					continue
-				}
+func RenderChunk(c *Chunk) {
+	if c.IsDirty || c.CachedTransforms == nil {
+		c.RebuildMeshCache()
+	}
 
-				wx := x + c.GlobalX*16
-				wz := z + c.GlobalZ*16
+	RegistryInstance := BlockModelRegistry()
 
-				neighborIsAir := GetGlobalBlock(wx-1, y, wz) == blocks.Air || GetGlobalBlock(wx+1, y, wz) == blocks.Air ||
-					GetGlobalBlock(wx, y-1, wz) == blocks.Air || GetGlobalBlock(wx, y+1, wz) == blocks.Air ||
-					GetGlobalBlock(wx, y, wz-1) == blocks.Air || GetGlobalBlock(wx, y, wz+1) == blocks.Air
-
-				if neighborIsAir {
-					RenderBlock(currentBlock, wx, y, wz)
-				}
-			}
+	for blockType, transforms := range c.CachedTransforms {
+		count := len(transforms)
+		if count == 0 {
+			continue
 		}
+
+		val, ok := RegistryInstance.BlockModels[blockType]
+		if !ok {
+			continue
+		}
+
+		mesh := *val.Meshes
+		material := *val.Materials
+
+		// Feed the low-level rendering loop a clean address to index zero
+		rl.DrawMeshInstanced(mesh, material, transforms, count)
 	}
 }
